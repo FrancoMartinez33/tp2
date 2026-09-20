@@ -4,9 +4,7 @@
  */
 public class ClaveNulaException extends RuntimeException {
 
-    public ClaveNulaException() {
-        super();
-    }
+    private static final long serialVersionUID = 1L;
 
     public ClaveNulaException(String mensaje) {
         super(mensaje);

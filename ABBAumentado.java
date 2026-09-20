@@ -523,11 +523,6 @@ public class ABBAumentado<K extends Comparable<? super K>, V> implements Iterabl
         return tamanosConsistentesRec(n.izq) && tamanosConsistentesRec(n.der);
     }
 
-    /** Raiz del arbol (null si vacio). Se usa en IndiceDoble. */
-    public Nodo<K, V> raiz() {
-        return raiz;
-    }
-
     @Override
     public Iterator<K> iterator() {
         return new Iterator<K>() {

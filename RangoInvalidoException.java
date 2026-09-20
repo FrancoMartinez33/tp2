@@ -4,9 +4,7 @@
  */
 public class RangoInvalidoException extends RuntimeException {
 
-    public RangoInvalidoException() {
-        super();
-    }
+    private static final long serialVersionUID = 1L;
 
     public RangoInvalidoException(String mensaje) {
         super(mensaje);

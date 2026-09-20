@@ -5,9 +5,7 @@
  */
 public class IndiceFueraDeRangoException extends RuntimeException {
 
-    public IndiceFueraDeRangoException() {
-        super();
-    }
+    private static final long serialVersionUID = 1L;
 
     public IndiceFueraDeRangoException(String mensaje) {
         super(mensaje);

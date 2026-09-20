@@ -123,7 +123,7 @@ public class TestValidacion {
 
         // ahora borrar hasta la mitad
         for (int i = 0; i < 200; i++) {
-            int claveAEliminar = presenteAleatorio(rng, presentes, arbol);
+            int claveAEliminar = presenteAleatorio(rng, presentes);
             try {
                 arbol.eliminar(claveAEliminar);
             } catch (ClaveInexistenteException e) {
@@ -156,7 +156,7 @@ public class TestValidacion {
         ok(arbol.size() == 200, "size coincide (200)");
     }
 
-    private static int presenteAleatorio(Random rng, List<Integer> presentes, ABBAumentado<Integer, String> arbol) {
+    private static int presenteAleatorio(Random rng, List<Integer> presentes) {
         int k = rng.nextInt(presentes.size()) + 1;
         return presentes.get(k - 1);
     }

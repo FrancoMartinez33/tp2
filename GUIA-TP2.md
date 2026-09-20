@@ -28,9 +28,7 @@ CÓDIGO
  */
 public class ClaveInexistenteException extends Exception {
 
-    public ClaveInexistenteException() {
-        super();
-    }
+    private static final long serialVersionUID = 1L;
 
     public ClaveInexistenteException(String mensaje) {
         super(mensaje);
@@ -69,9 +67,7 @@ CÓDIGO
  */
 public class IndiceFueraDeRangoException extends RuntimeException {
 
-    public IndiceFueraDeRangoException() {
-        super();
-    }
+    private static final long serialVersionUID = 1L;
 
     public IndiceFueraDeRangoException(String mensaje) {
         super(mensaje);
@@ -88,7 +84,7 @@ L6  extends RuntimeException [reservada: herencia]. RuntimeException es la
     En Python:  class IndiceFueraDeRangoException(RuntimeError): pass
 
 (Las clases ClaveNulaException y RangoInvalidoException son idénticas en forma:
-extienden RuntimeException con los dos mismos constructores. ClaveNulaException
+extienden RuntimeException con el constructor con mensaje. ClaveNulaException
 se lanza al recibir null, y RangoInvalidoException cuando a > b en
 consultarRango. Cambia solo el comentario de justificación y el nombre.)
 
@@ -457,8 +453,6 @@ public class ABBAumentado<K extends Comparable<? super K>, V> implements Iterabl
         if (n.tamano != esperado) { return false; }
         return tamanosConsistentesRec(n.izq) && tamanosConsistentesRec(n.der);
     }
-
-    public Nodo<K, V> raiz() { return raiz; }
 
     @Override
     public Iterator<K> iterator() {

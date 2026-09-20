@@ -6,9 +6,7 @@
  */
 public class ClaveInexistenteException extends Exception {
 
-    public ClaveInexistenteException() {
-        super();
-    }
+    private static final long serialVersionUID = 1L;
 
     public ClaveInexistenteException(String mensaje) {
         super(mensaje);

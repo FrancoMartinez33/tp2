@@ -171,21 +171,21 @@ public class TestABBAumentado {
             int hO = ord.altura();
 
             aleat.reiniciarVisitas();
-            Integer kEsimoA = aleat.kEsimo(n / 2);
+            aleat.kEsimo(n / 2);
             long visA = aleat.visitas();
 
             ord.reiniciarVisitas();
-            Integer kEsimoO = ord.kEsimo(n / 2);
+            ord.kEsimo(n / 2);
             long visO = ord.visitas();
 
             Integer a = aleat.kEsimo(n / 4);
             Integer b = aleat.kEsimo(3 * n / 4);
             aleat.reiniciarVisitas();
-            int rAum = aleat.consultarRango(a, b);
+            aleat.consultarRango(a, b);
             long visRangoAum = aleat.visitas();
 
             aleat.reiniciarVisitas();
-            int rIng = aleat.consultarRangoIngenuo(a, b);
+            aleat.consultarRangoIngenuo(a, b);
             long visRangoIng = aleat.visitas();
 
             System.out.printf("%-6d %-8d %-8d %-12d %-12d %-12d %-12d%n",
