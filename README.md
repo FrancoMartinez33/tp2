@@ -31,8 +31,8 @@ Sin modificar el código tras la fecha límite: el entregado es el que se defien
   `tamanosConsistentes` no los tocan.
 - **Compresión del hash:** `h(k) = (k.hashCode() & 0x7fffffff) % m`. El
   `& 0x7fffffff` descarta el bit de signo, lo que evita índices negativos
-  (en particular `Integer.MIN_VALUE`). Al superar `alfaMax` (por defecto 1)
-  se duplica `m` y se reubican todas las claves (rehash).
+  (en particular `Integer.MIN_VALUE`). Cuando `n > alfaMax·m` se duplica `m`
+  y se reubican todas las claves (rehash).
 - **Excepciones propias.** Chequeada: `ClaveInexistenteException` (buscar una
   clave inexistente es una situación prevista y manejable). No chequeadas:
   `IndiceFueraDeRangoException` (k fuera de [1,n]), `ClaveNulaException`
@@ -185,4 +185,3 @@ deben repetirse idénticamente en cualquier máquina.
 aún así `vis_ABB_get` acumula el Θ(log n) de las mismas búsquedas por el árbol)
 y la tabla 3 confirma que el encadenamiento degrada linealmente con α, tal como
 predice Θ(1+α).
->>>>>>> c19fa58 (TP2 ABB Aumentado + Indice Doble)

@@ -7,8 +7,8 @@
  * El & 0x7fffffff evita los hashCode negativos (en particular
  * Integer.MIN_VALUE).
  *
- * Tras cada insercion, si n > m (factor de carga alfa > 1) se duplica la
- * cantidad de cubetas y se reubican todas las claves (rehash).
+ * Tras cada insercion, si n > alfaMax * m se duplica la cantidad de cubetas
+ * y se reubican todas las claves (rehash).
  *
  * El contador de sondas cuenta cada nodo de cadena visitado en obtener,
  * insertar y eliminar. Es analogo al contador de visitas del arbol.
@@ -82,7 +82,7 @@ public class TablaEncadenada<K, E> {
         // No existe: insertar al frente de la cubeta.
         cubetas[i] = new NodoLista<>(clave, dato, cubetas[i]);
         n++;
-        if (n > cubetas.length && alfaMax != Double.POSITIVE_INFINITY) {
+        if (n > alfaMax * cubetas.length) {
             rehash();
         }
     }
