@@ -1,0 +1,2388 @@
+================================================================================
+GUÍA DE CÓDIGO PASO A PASO - TP2 ABB Aumentado + Índice Doble (g_ts2)
+================================================================================
+
+Cómo leer esta guía: para cada archivo primero verás el CÓDIGO COMPLETO en un
+bloque, y debajo la EXPLICACIÓN LÍNEA POR LÍNEA. Las palabras reservadas de Java
+aparecen explicadas la primera vez que se usan (marcadas como [reservada]),
+para no tener que volver a un glosario. Donde ayuda, se compara con Python.
+
+Compilar y ejecutar (desde la carpeta):
+    javac *.java
+    java TestABBAumentado   # traza obligatoria + for-each + tabla de visitas
+    java TestIndiceDoble    # traza Fases A-D + los 2 experimentos
+    java TestValidacion     # suite exhaustiva contra un oraculo (fuerza bruta)
+
+================================================================================
+ARCHIVO: ClaveInexistenteException.java
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO
+--------------------------------------------------------------------------------
+/**
+ * Excepcion CHEQUEADA: se lanza cuando se busca una clave que no esta
+ * en la estructura. Es chequeada porque es una situacion que el codigo
+ * que llama puede prever y manejar (un cliente busca un registro que
+ * puede o no existir).
+ */
+public class ClaveInexistenteException extends Exception {
+
+    private static final long serialVersionUID = 1L;
+
+    public ClaveInexistenteException(String mensaje) {
+        super(mensaje);
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L1-L5  Comentario de bloque Javadoc (/** ... */): documenta la clase y es el
+       lugar donde el enunciado pide JUSTIFICAR por qué cada excepción es
+       chequeada o no. Este es el razonamiento que vas a defender:
+       "buscar una clave que puede no existir lo provoca un cliente normal"
+       -> situación previsible -> excepción CHEQUEADA.
+
+L8  public [reservada: visibilidad, accesible desde cualquier clase]
+    class [reservada: declara un molde/tipo de objeto] ClaveInexistenteException
+    extends [reservada: herencia, "es un subtipo de"] Exception.
+    -> Las clases que extienden "Exception" son ERRORES CHEQUEADOS: el
+       compilador OBLIGA a quien llama a obtener()/eliminar() a manejarlos
+       (try/catch o throws). En Python:  class ClaveInexistenteException(Exception): pass
+
+L10  private [reservada: solo visible dentro de esta clase] static [reservada:
+     pertenece a la CLASE, no a cada objeto] final [reservada: no se puede
+     cambiar] long [reservada: entero de 64 bits] serialVersionUID = 1L.
+     Java "serializa" las excepciones (las convierte en bytes para guardarlas
+     o mandarlas por red); este número identifica la versión de la clase. El
+     compilador PIDE definirlo para que no quede un warning. Es puro trámite.
+
+L12  public ClaveInexistenteException(String mensaje): el constructor tiene
+     UN parámetro String llamado mensaje. Un constructor es un método especial
+     que se ejecuta al hacer "new": sirve para preparar el objeto antes de
+     usarlo. Una clase puede tener uno, dos o varios: elegimos darle solo este
+     porque es el único que el programa usa.
+     String [clase estándar de Java para texto, equivale a str en Python].
+     super(mensaje) [reservada: "llama al constructor de la clase padre"]
+     guarda el texto para leerlo después con getMessage() (en Python sería
+     self.args = (mensaje,)).
+
+================================================================================
+ARCHIVO: ClaveNulaException.java
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO
+--------------------------------------------------------------------------------
+/**
+ * Excepcion NO CHEQUEADA: se lanza cuando se pasa null como clave.
+ * Es error de programacion: las claves deben ser no-nulas.
+ */
+public class ClaveNulaException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    public ClaveNulaException(String mensaje) {
+        super(mensaje);
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L1-L4  Javadoc de justificación: pasar null como clave es un ERROR DE
+       PROGRAMACIÓN de quien llama, no una situación operativa que un cliente
+       normal pueda prever.
+
+L5  extends RuntimeException [reservada: herencia]. RuntimeException es la base
+    de los ERRORES NO CHEQUEADOS: el compilador NO obliga a capturarlos. Si tu
+    código arranca con null como clave, el corte es justamente lo que quieres:
+    un error claro en la línea que lo provoca, no un NullPointerException raro
+    más adelante. En Python:  class ClaveNulaException(RuntimeError): pass
+
+L7, L9  Igual que el archivo anterior: serialVersionUID y constructor con
+    mensaje que delega en el padre con super().
+
+================================================================================
+ARCHIVO: IndiceFueraDeRangoException.java
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO
+--------------------------------------------------------------------------------
+/**
+ * Excepcion NO CHEQUEADA: se lanza cuando se pide un indice invalido
+ * (ej. kEsimo con k fuera de [1, size]). Representa un error de
+ * programacion del que llama, no una situacion operativa previsible.
+ */
+public class IndiceFueraDeRangoException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    public IndiceFueraDeRangoException(String mensaje) {
+        super(mensaje);
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L1-L5  Justificación de defensa: "kEsimo(0) no lo provoca un cliente, lo
+       provoca un índice mal calculado en mi código" -> error de programación
+       -> NO chequeada.
+
+L6  extends RuntimeException (mismo patrón que ClaveNulaException).
+    En Python:  class IndiceFueraDeRangoException(RuntimeError): pass
+
+L7, L9  serialVersionUID + constructor con mensaje.
+
+================================================================================
+ARCHIVO: RangoInvalidoException.java
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO
+--------------------------------------------------------------------------------
+/**
+ * Excepcion NO CHEQUEADA: se lanza cuando a > b en consultarRango.
+ * Representa un error de programacion del que llama.
+ */
+public class RangoInvalidoException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    public RangoInvalidoException(String mensaje) {
+        super(mensaje);
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L1-L4  Pedir "cuántos hay entre 80 y 20" (a > b) es pedir algo imposible:
+       otro error de programación, no un caso operativo.
+
+L5-L9  Es idéntica en forma a ClaveNulaException: RuntimeException +
+       serialVersionUID + constructor con mensaje. Cambia solo el comentario
+       de justificación.
+
+= RESUMEN DE LAS 4 EXCEPCIONES =
+Chequeada:  ClaveInexistenteException  (buscar/borrar lo que puede no existir)
+No chequeadas: ClaveNulaException (null), IndiceFueraDeRangoException (k malo),
+              RangoInvalidoException (rango a > b)
+Criterio mnemotécnico: "si lo provoca el DATO -> chequeada; si lo provoca el
+PROGRAMADOR -> no chequeada".
+================================================================================
+ARCHIVO: ABBAumentado.java  (el corazón del Ejercicio 1)
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO
+--------------------------------------------------------------------------------
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+/**
+ * Arbol Binario de Busqueda aumentado.
+ *
+ * Cada nodo guarda, ademas de clave y valor, el tamano de su subarbol
+ * (cantidad de nodos, incluido el propio). Con ese campo aumentado,
+ * el k-esimo menor y el conteo de un rango se responden bajando por un
+ * unico camino en O(h): no hace falta recorrer el arbol en inorden.
+ *
+ * Invariante de tamano (debe cumplirse despues de cualquier operacion):
+ *     n.tamano = 1 + tamano(n.izq) + tamano(n.der)
+ *     arbol.size() = tamano(raiz)   (0 si arbol vacio)
+ *
+ * UNA REGLA IMPORTANTE EN ELIMINAR: cuando se borra un nodo con dos hijos,
+ * el sucesor inorden se MUEVE (se reenlazan sus punteros) a la posicion
+ * del eliminado. NO se copia la clave de un nodo a otro, porque una
+ * referencia externa a ese objeto Nodo seguiria valida (lo usa IndiceDoble).
+ *
+ * @param <K> tipo de la clave, comparable
+ * @param <V> tipo del valor asociado
+ */
+public class ABBAumentado<K extends Comparable<? super K>, V> implements Iterable<K> {
+
+    /**
+     * Nodo del ABB aumentado. Cada Nodo conserva su clave desde que se
+     * inserta hasta que se elimina.
+     */
+    public static class Nodo<K, V> {
+        K clave;
+        V valor;
+        Nodo<K, V> izq;
+        Nodo<K, V> der;
+        int tamano;
+
+        public Nodo(K clave, V valor) {
+            this.clave = clave;
+            this.valor = valor;
+            this.tamano = 1;
+        }
+
+        public K clave() {
+            return clave;
+        }
+
+        public V valor() {
+            return valor;
+        }
+
+        public int tamano() {
+            return tamano;
+        }
+    }
+
+    private Nodo<K, V> raiz;
+    private long visitas;
+
+    /** Arbol vacio. */
+    public ABBAumentado() {
+        this.raiz = null;
+        this.visitas = 0;
+    }
+
+    private void avisarVisita() {
+        visitas++;
+    }
+
+    /**
+     * Inserta el par (clave, valor). Si la clave ya existia, reemplaza el
+     * valor sin cambiar la estructura ni los tamanos.
+     */
+    public void agregar(K clave, V valor) {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        raiz = agregarRec(raiz, clave, valor);
+    }
+
+    private Nodo<K, V> agregarRec(Nodo<K, V> n, K clave, V valor) {
+        if (n == null) {
+            return new Nodo<>(clave, valor);
+        }
+        avisarVisita();
+        int cmp = clave.compareTo(n.clave);
+        if (cmp < 0) {
+            n.izq = agregarRec(n.izq, clave, valor);
+        } else if (cmp > 0) {
+            n.der = agregarRec(n.der, clave, valor);
+        } else {
+            n.valor = valor;
+            return n;
+        }
+        n.tamano = 1 + tamano(n.izq) + tamano(n.der);
+        return n;
+    }
+
+    /**
+     * Elimina la clave y retorna su valor.
+     */
+    public V eliminar(K clave) throws ClaveInexistenteException {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        Nodo<K, V>[] resultado = eliminarRec(raiz, clave);
+        raiz = resultado[1];
+        if (resultado[0] == null) {
+            throw new ClaveInexistenteException("Clave no encontrada: " + clave);
+        }
+        return resultado[0].valor;
+    }
+
+    /**
+     * Devuelve [nodoEliminado, nuevaRaiz]. Si la clave no existe,
+     * nodoEliminado es null y nuevaRaiz es la raiz sin cambios.
+     */
+    @SuppressWarnings("unchecked")
+    private Nodo<K, V>[] eliminarRec(Nodo<K, V> n, K clave) {
+        Nodo<K, V>[] res = (Nodo<K, V>[]) new Nodo[2];
+        if (n == null) {
+            res[0] = null;
+            res[1] = null;
+            return res;
+        }
+        avisarVisita();
+        int cmp = clave.compareTo(n.clave);
+        if (cmp < 0) {
+            Nodo<K, V>[] sub = eliminarRec(n.izq, clave);
+            n.izq = sub[1];
+            res[0] = sub[0];
+            res[1] = (res[0] != null) ? recalcular(n) : n;
+            return res;
+        } else if (cmp > 0) {
+            Nodo<K, V>[] sub = eliminarRec(n.der, clave);
+            n.der = sub[1];
+            res[0] = sub[0];
+            res[1] = (res[0] != null) ? recalcular(n) : n;
+            return res;
+        } else {
+            res[0] = n;
+            res[1] = reemplazarYNuevo(n);
+            return res;
+        }
+    }
+
+    /**
+     * Dado el nodo a eliminar (que coincide con la clave), devuelve la raiz
+     * del subarbol que lo reemplaza.
+     */
+    private Nodo<K, V> reemplazarYNuevo(Nodo<K, V> n) {
+        if (n.izq == null) {
+            return n.der;
+        }
+        if (n.der == null) {
+            return n.izq;
+        }
+        // Dos hijos: mudar el sucesor inorden sobre la posicion de n.
+        Nodo<K, V>[] mudanza = extraerMinimo(n.der);
+        Nodo<K, V> sucesor = mudanza[0];
+        sucesor.izq = n.izq;
+        sucesor.der = mudanza[1];
+        sucesor.tamano = 1 + tamano(sucesor.izq) + tamano(sucesor.der);
+        return sucesor;
+    }
+
+    /**
+     * Extrae el minimo del subarbol cuya raiz se pasa (no debe ser null).
+     * Devuelve [minimo, nuevaRaizSinMinimo]. No copia claves.
+     */
+    @SuppressWarnings("unchecked")
+    private Nodo<K, V>[] extraerMinimo(Nodo<K, V> n) {
+        Nodo<K, V>[] res = (Nodo<K, V>[]) new Nodo[2];
+        if (n.izq == null) {
+            res[0] = n;
+            res[1] = n.der;
+            return res;
+        }
+        Nodo<K, V>[] sub = extraerMinimo(n.izq);
+        n.izq = sub[1];
+        n.tamano = 1 + tamano(n.izq) + tamano(n.der);
+        res[0] = sub[0];
+        res[1] = n;
+        return res;
+    }
+
+    private Nodo<K, V> recalcular(Nodo<K, V> n) {
+        n.tamano = 1 + tamano(n.izq) + tamano(n.der);
+        return n;
+    }
+
+    private int tamano(Nodo<K, V> n) {
+        return (n == null) ? 0 : n.tamano;
+    }
+
+    /**
+     * Retorna el valor asociado a la clave.
+     */
+    public V obtener(K clave) throws ClaveInexistenteException {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        Nodo<K, V> n = obtenerRec(raiz, clave);
+        if (n == null) {
+            throw new ClaveInexistenteException("Clave no encontrada: " + clave);
+        }
+        return n.valor;
+    }
+
+    private Nodo<K, V> obtenerRec(Nodo<K, V> n, K clave) {
+        if (n == null) {
+            return null;
+        }
+        avisarVisita();
+        int cmp = clave.compareTo(n.clave);
+        if (cmp < 0) {
+            return obtenerRec(n.izq, clave);
+        } else if (cmp > 0) {
+            return obtenerRec(n.der, clave);
+        } else {
+            return n;
+        }
+    }
+
+    /**
+     * Devuelve el nodo asociado a la clave, o null si no existe
+     * (sin lanzar excepcion). No cuenta como operacion medible del TAD.
+     */
+    public Nodo<K, V> nodoDe(K clave) {
+        return buscarNodo(raiz, clave);
+    }
+
+    private Nodo<K, V> buscarNodo(Nodo<K, V> n, K clave) {
+        if (n == null) {
+            return null;
+        }
+        int cmp = clave.compareTo(n.clave);
+        if (cmp < 0) {
+            return buscarNodo(n.izq, clave);
+        } else if (cmp > 0) {
+            return buscarNodo(n.der, clave);
+        } else {
+            return n;
+        }
+    }
+
+    /**
+     * Indica si la clave esta en el arbol.
+     */
+    public boolean contiene(K clave) {
+        if (clave == null) {
+            return false;
+        }
+        return contieneRec(raiz, clave);
+    }
+
+    private boolean contieneRec(Nodo<K, V> n, K clave) {
+        if (n == null) {
+            return false;
+        }
+        avisarVisita();
+        int cmp = clave.compareTo(n.clave);
+        if (cmp < 0) {
+            return contieneRec(n.izq, clave);
+        } else if (cmp > 0) {
+            return contieneRec(n.der, clave);
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * k-esimo menor (1-based): kEsimo(1) es el minimo, kEsimo(size()) el maximo.
+     * O(h), sin recorrer en inorden.
+     */
+    public K kEsimo(int k) {
+        int n = size();
+        if (k < 1 || k > n) {
+            throw new IndiceFueraDeRangoException(
+                    "k fuera de rango [1, " + n + "]: " + k);
+        }
+        return kEsimoRec(raiz, k).clave;
+    }
+
+    private Nodo<K, V> kEsimoRec(Nodo<K, V> n, int k) {
+        avisarVisita();
+        int tamIzq = tamano(n.izq);
+        if (k == tamIzq + 1) {
+            return n;
+        } else if (k <= tamIzq) {
+            return kEsimoRec(n.izq, k);
+        } else {
+            return kEsimoRec(n.der, k - tamIzq - 1);
+        }
+    }
+
+    /**
+     * Cantidad de claves estrictamente menores que clave. O(h). clave no
+     * tiene que estar en el arbol.
+     */
+    public int cuantosMenores(K clave) {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        return cuantosMenoresRec(raiz, clave);
+    }
+
+    private int cuantosMenoresRec(Nodo<K, V> n, K clave) {
+        if (n == null) {
+            return 0;
+        }
+        avisarVisita();
+        int cmp = clave.compareTo(n.clave);
+        if (cmp <= 0) {
+            return cuantosMenoresRec(n.izq, clave);
+        } else {
+            return 1 + tamano(n.izq) + cuantosMenoresRec(n.der, clave);
+        }
+    }
+
+    /**
+     * Cantidad de claves en el intervalo cerrado [a, b]. O(h). a y b no
+     * tienen que estar en el arbol.
+     */
+    public int consultarRango(K a, K b) {
+        if (a == null || b == null) {
+            throw new ClaveNulaException("Limites de rango no pueden ser null.");
+        }
+        if (a.compareTo(b) > 0) {
+            throw new RangoInvalidoException("a > b en consultarRango.");
+        }
+        return cuantosMenoresOIguales(b) - cuantosMenores(a);
+    }
+
+    private int cuantosMenoresOIguales(K clave) {
+        return cuantosMenoresRec(raiz, clave) + (contieneClaveEn(clave) ? 1 : 0);
+    }
+
+    private boolean contieneClaveEn(K clave) {
+        return estaClave(raiz, clave);
+    }
+
+    private boolean estaClave(Nodo<K, V> n, K clave) {
+        if (n == null) {
+            return false;
+        }
+        avisarVisita();
+        int cmp = clave.compareTo(n.clave);
+        if (cmp < 0) {
+            return estaClave(n.izq, clave);
+        } else if (cmp > 0) {
+            return estaClave(n.der, clave);
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * La misma cuenta que consultarRango pero recorriendo todos los nodos
+     * en inorden. Columna de control del experimento (Theta(n) siempre).
+     */
+    public int consultarRangoIngenuo(K a, K b) {
+        if (a == null || b == null) {
+            throw new ClaveNulaException("Limites de rango no pueden ser null.");
+        }
+        if (a.compareTo(b) > 0) {
+            throw new RangoInvalidoException("a > b en consultarRango.");
+        }
+        int[] contador = new int[1];
+        consultarRangoIngenuoRec(raiz, a, b, contador);
+        return contador[0];
+    }
+
+    private void consultarRangoIngenuoRec(Nodo<K, V> n, K a, K b, int[] contador) {
+        if (n == null) {
+            return;
+        }
+        avisarVisita();
+        consultarRangoIngenuoRec(n.izq, a, b, contador);
+        if (n.clave.compareTo(a) >= 0 && n.clave.compareTo(b) <= 0) {
+            contador[0]++;
+        }
+        consultarRangoIngenuoRec(n.der, a, b, contador);
+    }
+
+    /**
+     * Posicion 1-based de clave en el inorden = cuantosMenores(clave) + 1.
+     */
+    public int rango(K clave) throws ClaveInexistenteException {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        if (!contiene(clave)) {
+            throw new ClaveInexistenteException("Clave no encontrada: " + clave);
+        }
+        return cuantosMenores(clave) + 1;
+    }
+
+    /**
+     * Sucesor inorden, o null si clave es el maximo. O(h).
+     */
+    public K sucesor(K clave) throws ClaveInexistenteException {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        if (!contiene(clave)) {
+            throw new ClaveInexistenteException("Clave no encontrada: " + clave);
+        }
+        Nodo<K, V> n = buscarNodo(raiz, clave);
+        if (n.der != null) {
+            return minimo(n.der).clave;
+        }
+        return sucesorDesdeRaiz(raiz, clave);
+    }
+
+    private Nodo<K, V> minimo(Nodo<K, V> n) {
+        avisarVisita();
+        while (n.izq != null) {
+            n = n.izq;
+            avisarVisita();
+        }
+        return n;
+    }
+
+    private K sucesorDesdeRaiz(Nodo<K, V> n, K clave) {
+        Nodo<K, V> candidato = null;
+        while (n != null) {
+            avisarVisita();
+            int cmp = clave.compareTo(n.clave);
+            if (cmp < 0) {
+                candidato = n;
+                n = n.izq;
+            } else {
+                n = n.der;
+            }
+        }
+        return (candidato == null) ? null : candidato.clave;
+    }
+
+    /**
+     * Predecesor inorden, o null si clave es el minimo. O(h).
+     */
+    public K predecesor(K clave) throws ClaveInexistenteException {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        if (!contiene(clave)) {
+            throw new ClaveInexistenteException("Clave no encontrada: " + clave);
+        }
+        Nodo<K, V> n = buscarNodo(raiz, clave);
+        if (n.izq != null) {
+            return maximo(n.izq).clave;
+        }
+        return predecesorDesdeRaiz(raiz, clave);
+    }
+
+    private Nodo<K, V> maximo(Nodo<K, V> n) {
+        avisarVisita();
+        while (n.der != null) {
+            n = n.der;
+            avisarVisita();
+        }
+        return n;
+    }
+
+    private K predecesorDesdeRaiz(Nodo<K, V> n, K clave) {
+        Nodo<K, V> candidato = null;
+        while (n != null) {
+            avisarVisita();
+            int cmp = clave.compareTo(n.clave);
+            if (cmp > 0) {
+                candidato = n;
+                n = n.der;
+            } else {
+                n = n.izq;
+            }
+        }
+        return (candidato == null) ? null : candidato.clave;
+    }
+
+    /** Cantidad de claves. */
+    public int size() {
+        return tamano(raiz);
+    }
+
+    /** Altura: -1 si vacio, 0 si hoja. */
+    public int altura() {
+        return alturaRec(raiz);
+    }
+
+    private int alturaRec(Nodo<K, V> n) {
+        if (n == null) {
+            return -1;
+        }
+        return 1 + Math.max(alturaRec(n.izq), alturaRec(n.der));
+    }
+
+    /** Nodos visitados desde la creacion o el ultimo reinicio. */
+    public long visitas() {
+        return visitas;
+    }
+
+    /** Reinicia el contador de visitas. */
+    public void reiniciarVisitas() {
+        visitas = 0;
+    }
+
+    /**
+     * Verifica el invariante de tamano en todo el arbol. Metodo de
+     * depuracion; NO llamarlo dentro de operaciones medibles (recorre todo).
+     */
+    public boolean tamanosConsistentes() {
+        return tamanosConsistentesRec(raiz);
+    }
+
+    private boolean tamanosConsistentesRec(Nodo<K, V> n) {
+        if (n == null) {
+            return true;
+        }
+        int esperado = 1 + tamano(n.izq) + tamano(n.der);
+        if (n.tamano != esperado) {
+            return false;
+        }
+        return tamanosConsistentesRec(n.izq) && tamanosConsistentesRec(n.der);
+    }
+
+    @Override
+    public Iterator<K> iterator() {
+        return new Iterator<K>() {
+            private Nodo<K, V> siguiente = minimoInicial();
+
+            private Nodo<K, V> minimoInicial() {
+                Nodo<K, V> n = raiz;
+                if (n == null) {
+                    return null;
+                }
+                while (n.izq != null) {
+                    n = n.izq;
+                }
+                return n;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return siguiente != null;
+            }
+
+            @Override
+            public K next() {
+                if (siguiente == null) {
+                    throw new NoSuchElementException("No hay mas claves.");
+                }
+                Nodo<K, V> actual = siguiente;
+                siguiente = sucesorNodo(actual);
+                return actual.clave;
+            }
+
+            private Nodo<K, V> sucesorNodo(Nodo<K, V> n) {
+                if (n.der != null) {
+                    Nodo<K, V> m = n.der;
+                    while (m.izq != null) {
+                        m = m.izq;
+                    }
+                    return m;
+                }
+                Nodo<K, V> cand = null;
+                Nodo<K, V> actual = raiz;
+                while (actual != null) {
+                    int cmp = n.clave.compareTo(actual.clave);
+                    if (cmp < 0) {
+                        cand = actual;
+                        actual = actual.izq;
+                    } else {
+                        actual = actual.der;
+                    }
+                }
+                return cand;
+            }
+        };
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        toStringRec(raiz, sb);
+        return sb.toString();
+    }
+
+    private void toStringRec(Nodo<K, V> n, StringBuilder sb) {
+        if (n == null) {
+            return;
+        }
+        toStringRec(n.izq, sb);
+        if (sb.length() > 0) {
+            sb.append(' ');
+        }
+        sb.append(n.clave).append('(').append(n.tamano).append(')');
+        toStringRec(n.der, sb);
+    }
+}
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L1-L2  import [reservada: trae clases de otra biblioteca] java.util.Iterator y
+       java.util.NoSuchElementException (la excepción estándar para "no hay
+       más elementos").
+
+L4-L23  Javadoc MUY importante: define el concepto central del TP.
+    - "AUMENTADO": cada nodo guarda tamano = 1 + tamano(izq) + tamano(der).
+      Ese ÚNICO campo extra convierte kEsimo y consultarRango en un camino de
+      O(h) en vez de recorrer todo el árbol (O(n)).
+    - La regla de ELIMINAR: con dos hijos, el sucesor se MUEVE (se reenlazan
+      punteros), NO se copia la clave. Si se copiara, el Nodo que IndiceDoble
+      guarda en la tabla quedaría con la clave vieja -> se rompe el Ejercicio 2.
+
+L24  public class ABBAumentado<K extends Comparable<? super K>, V>
+    implements Iterable<K>.
+    - <K, V>: genéricos = "cualquier tipo, se fija al crear el objeto" (como
+      los tipos de Python con type hints, pero chequeado al compilar).
+    - K extends Comparable<? super K>: K debe poder compararse consigo mismo.
+      Comparable es la interfaz del JDK con compareTo() (los <, > de Python).
+      "? super K" = "K o alguno de sus ancestros". Integer, String, etc. sirven.
+    - implements [reservada: "cumplo el contrato de la interfaz"]
+      Iterable<K>: permite el "for (K k : arbol)" (como __iter__ de Python).
+
+L26-L54  Clase interna public static Nodo<K, V>.
+    - "static" aquí = el Nodo NO necesita una referencia al ABB que lo contiene
+      (es un eslabón independiente). Es pública porque IndiceDoble la usa.
+    - Campos: clave, valor, izq, der (referencias a otros nodos) y tamano (el
+      campo AUMENTADO). En Python sería: class Nodo: def __init__(...): ...
+    - Constructor pone tamano = 1 (un nodo recién creado es hoja).
+    - Getters clave()/valor()/tamano(): forma de LEER atributos privados desde
+      afuera; el enunciado pide estos tres nombres exactos.
+
+L56-L67  raiz (la puerta del árbol) y visitas (contador de instrumentación).
+    avisarVisita() suma 1 cada vez que una operación "mira" un nodo. No es
+    lógica del TAD: es el MEDIDOR que usan los experimentos como evidencia.
+
+L73-L96  agregar(clave, valor), método PÚBLICO.
+    - if (clave == null) throw new ClaveNulaException(...): null no es clave.
+      throw [reservada: lanza un error] new [reservada: crea un objeto].
+    - raiz = agregarRec(raiz, clave, valor): la recursión devuelve la NUEVA
+      raíz del subárbol. Es el patrón "reemplazo recursivo", clásico en ABB.
+    agregarRec (privado): la búsqueda binaria recursiva.
+    - if (n == null) return new Nodo<>(clave, valor): lugar libre -> insertar.
+    - avisarVisita(); int cmp = clave.compareTo(n.clave): cmp < 0 ir a la
+      izquierda, cmp > 0 ir a la derecha.
+    - cmp == 0: la clave YA estaba -> n.valor = valor; return n (reemplaza el
+      valor, NO cambia estructura ni tamaños, por eso sale antes de recalcular).
+    - n.tamano = 1 + tamano(n.izq) + tamano(n.der): al volver de la recursión
+      CADA nodo del camino recalcula su tamano. El invariante queda intacto.
+
+L101-L111 eliminar(clave) throws ClaveInexistenteException, público.
+    - throws [reservada: "este método PUEDE lanzar esta excepción; quien lo
+      llama debe manejarla"]. Como es CHEQUEADA, el compilador lo obliga.
+    - eliminarRec devuelve un arreglo de 2: [nodoEliminado, nuevaRaiz]. Así la
+      recursión devuelve dos cosas (Java no tiene "return múltiple").
+    - Si resultado[0] == null -> la clave no se encontró -> lanza la excepción
+      chequeada. Si existe, devuelve el valor del nodo eliminado.
+
+L117-L144 eliminarRec (privado, el algoritmo completo del borrado):
+    - Nodo<K, V>[] res = (Nodo<K, V>[]) new Nodo[2]: Java no deja crear
+      "arreglos genéricos" a secas; el casteo (tipo) + @SuppressWarnings(
+      "unchecked") [anotación: "confiá, la conversión es segura"] es el
+      trámite estándar.
+    - Si n es null, devuelve [null, null] (no se encontró nada por esta rama).
+    - Si la clave es menor/mayor, baja por el hijo, le asigna la nueva raíz
+      del subárbol (sub[1]) y recalcula tamano SOLO si realmente se borró algo
+      (res[0] != null, mediante el ternario ? :).
+    - Si coincide (else final): res[0] = n (el nodo eliminado) y res[1] =
+      reemplazarYNuevo(n) (qué queda en su lugar).
+
+L150-L164 reemplazarYNuevo(n):
+    - 0 hijos no existe acá (n es el nodo eliminado).
+    - 1 hijo: devuelve ese hijo (el nodo "salta" por encima del eliminado).
+    - 2 hijos: la operación estrella del ejercicio.
+      Nodo[] mudanza = extraerMinimo(n.der) extrae el SUCESOR INORDEN del
+      subárbol derecho; sucesor.izq = n.izq y sucesor.der = mudanza[1]
+      reenlazan sus punteros a los hijos que tenía n; recalcula su tamano y
+      DEVUELVE ese mismo nodo sucesor. No se copió ninguna clave: el objeto
+      Nodo sucesor sigue siendo el mismo objeto de antes.
+
+L170-L184 extraerMinimo(n): baja siempre por la izquierda hasta el mínimo.
+    Devuelve [minimo, nuevaRaizSinMinimo]. Al volver, cada nodo recalcula su
+    tamano (la "nueva raíz sin el mínimo" queda bien formada).
+
+L186-L193 recalcular y tamano(Nodo): recalcular re-fija el campo aumentado de un
+    nodo; tamano(...) es el lector con caso null -> 0 (el "size" parcial).
+
+L198-L222 obtener(clave): igual estructura que agregar; si la búsqueda llega a
+    null lanza la excepción CHEQUEADA con el texto "Clave no encontrada: ...".
+
+L228-L244 nodoDe(clave): devuelve el Nodo (o null) SIN lanzar excepción y SIN
+    contar visitas (no avisaVisita). Es el "puente" con la tabla del Ejercicio 2:
+    IndiceDoble la usa para meter el nodo en la cubeta correcta.
+
+L249-L269 contiene(clave): boolean [reservada: verdadero/falso; en Python bool].
+    Recorre como obtener pero SIN lanzar: true si existe, false si no. Null
+    devuelve false directamente (no excepción: "contiene(null)" es una pregunta,
+    no un error).
+
+L275-L294 kEsimo(k): EL MÉTODO QUE SOLO EXISTE GRACIAS AL CAMPO AUMENTADO.
+    - Valida k contra [1, size]; k malo -> IndiceFueraDeRangoException (no
+      chequeada).
+    - kEsimoRec: cuenta cuántos nodos hay en el subárbol izquierdo sin bajarse
+      (tamano(n.izq), O(1)). Si k == tamIzq+1, este nodo es el k-ésimo.
+      Si k <= tamIzq, el k-ésimo está a la izquierda; si no, está a la derecha
+      en la posición k - tamIzq - 1. Baja UN solo camino: O(h) visitas.
+      En un arreglo ordenado esto sería arreglo[k-1] (O(1)): el ABB aumentado
+      es el equivalente dinámico (permite insertar/borrar y sigue ordenado).
+
+L300-L318 cuantosMenores(clave): cuenta las claves ESTRICTAMENTE menores.
+    - Si cmp <= 0 (clave <= nodo): el nodo y todo su subárbol derecho ya son
+      >= clave -> seguir solo por la izquierda.
+    - Si cmp > 0: el nodo actual (1) + todo su subárbol izquierdo (tamano) son
+      menores -> acumula y sigue por la derecha. O(h), no necesita que la clave
+      esté en el árbol.
+
+L324-L355 consultarRango(a, b): claves en [a, b] = cuantosMenoresOIguales(b) -
+    cuantosMenores(a). Cuesta 2-3 caminos de altura h: O(h).
+    - Validaciones: a o b null -> ClaveNulaException; a > b -> RangoInvalido.
+    - cuantosMenoresOIguales = cuantosMenores(clave) + (1 si la clave está):
+      porque cuantosMenores cuenta estrictos y el intervalo es cerrado.
+    - contieneClaveEn/estaClave: otra bajada para saber si b está en el árbol.
+
+L361-L383 consultarRangoIngenuo(a, b): la versión "tonta" que se incluye a
+    propósito como COLUMNA DE CONTROL. Recorre el árbol COMPLETO en inorden y
+    cuenta los que caen en [a, b]: Theta(n) siempre. Viste int[] contador? Es
+    un truco para poder modificar un número dentro de un método void (los int
+    pasan "por valor"; un arreglo es una referencia que se puede mutar).
+    El experimento compara las visitas de las dos versiones y ahí brilla el
+    aumento: con N=10000, ingenuo=10000 visitas; aumentado=unas 50.
+
+L388-L396 rango(clave): posición 1-based de clave en el orden = cuantosMenores
+    (clave) + 1. Requiere que clave exista (si no, ClaveInexistenteException).
+
+L401-L437 sucesor(clave): el siguiente en orden, o null si es el máximo.
+    - Si clave tiene subárbol derecho: el sucesor es el MÍNIMO de ese subárbol.
+    - Si no: sube "con lápiz" desde la raíz guardando el último nodo por el que
+      se pasó a la izquierda (candidato). Ese candidato es el sucesor.
+
+L442-L478 predecesor(clave): simétrico (máximo del izquierdo, o candidato de
+    la última pasada a la derecha).
+
+L481-L495 size() es O(1): devuelve tamano(raiz), el campo aumentado de la raíz.
+    altura(): -1 vacío, 0 hoja, 1+nodo con hijos... es O(n) (recorre todo),
+    solo se usa para los encabezados del experimento.
+
+L498-L505 visitas()/reiniciarVisitas(): leen y ponen en cero el contador.
+
+L511-L524 tamanosConsistentes(): verificación de DEPURACIÓN del invariante
+    (recorre TODO el árbol, O(n)). El comentario avisa: NO llamarlo dentro de
+    una operación medible porque contaminaría el contador. Los tests lo usan
+    como prueba de que cada agregar/eliminar deja los tamaños bien.
+
+L526-L579 iterator(): recorre en INORDEN sin apilar el árbol completo.
+    - siguiente arranca en el mínimo (minimoInicial, bajando todo a la
+      izquierda).
+    - hasNext(): ¿quedan nodos? next(): devuelve la clave actual y avanza con
+      sucesorNodo:
+        * Si hay hijo derecho: el mínimo de ese derecho (bajar izquierdas).
+        * Si no: bajar desde la raíz guardando el "candidato" (última pasada
+          a la izquierda), igual que en sucesor().
+    Cada next() es O(h); recorrer todo el árbol es O(n*h) en el peor caso
+    (aceptable: es iteración, no una operación del TAD medible).
+
+L581-L598 toString(): inorden con el tamano aumentado de cada clave entre
+    paréntesis, p. ej.  "20(1) 30(3) 35(1) 40(1) 50(5) 60(1) 65(2) 70(3) 80(1)".
+    StringBuilder [clase eficiente para concatenar, como "".join en Python].
+    Es el formato que pide la traza obligatoria.
+================================================================================
+ARCHIVO: TablaEncadenada.java  (Ejercicio 2 - la tabla de dispersión)
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO
+--------------------------------------------------------------------------------
+/**
+ * Tabla de dispersion generica con resolucion de colisiones por
+ * encadenamiento (listas enlazadas propias, una por cubeta).
+ *
+ * La funcion de compresion usada es:
+ *     h(k) = (k.hashCode() & 0x7fffffff) % m
+ * El & 0x7fffffff evita los hashCode negativos (en particular
+ * Integer.MIN_VALUE).
+ *
+ * Tras cada insercion, si n > alfaMax * m se duplica la cantidad de cubetas
+ * y se reubican todas las claves (rehash).
+ *
+ * El contador de sondas cuenta cada nodo de cadena visitado en obtener,
+ * insertar y eliminar. Es analogo al contador de visitas del arbol.
+ *
+ * El dato viaja como E: en IndiceDoble, E es la referencia al Nodo del ABB.
+ *
+ * @param <K> tipo de la clave
+ * @param <E> tipo del dato almacenado
+ */
+public class TablaEncadenada<K, E> {
+
+    /** Nodo de lista enlazada propia (por cubeta). */
+    private static class NodoLista<K, E> {
+        K clave;
+        E dato;
+        NodoLista<K, E> siguiente;
+
+        NodoLista(K clave, E dato, NodoLista<K, E> siguiente) {
+            this.clave = clave;
+            this.dato = dato;
+            this.siguiente = siguiente;
+        }
+    }
+
+    private static final int TAM_INICIAL = 11;
+
+    private NodoLista<K, E>[] cubetas;
+    private int n;
+    private double alfaMax;
+    private long sondas;
+
+    /** Tabla con m=11 y alfaMax=1 (rehash al superar). */
+    public TablaEncadenada() {
+        this(TAM_INICIAL, 1.0);
+    }
+
+    /** Tabla con m y alfaMax configurables para el experimento. */
+    @SuppressWarnings("unchecked")
+    public TablaEncadenada(int m, double alfaMax) {
+        if (m <= 0) {
+            throw new IllegalArgumentException("m debe ser positivo.");
+        }
+        this.cubetas = (NodoLista<K, E>[]) new NodoLista[m];
+        this.n = 0;
+        this.alfaMax = alfaMax;
+        this.sondas = 0;
+    }
+
+    private int indice(K clave) {
+        return (clave.hashCode() & 0x7fffffff) % cubetas.length;
+    }
+
+    /**
+     * Inserta (clave, dato). Si la clave ya existia, actualiza el dato.
+     * Puede disparar rehash.
+     */
+    public void insertar(K clave, E dato) {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        int i = indice(clave);
+        NodoLista<K, E> actual = cubetas[i];
+        while (actual != null) {
+            sondas++;
+            if (actual.clave.equals(clave)) {
+                actual.dato = dato;
+                return;
+            }
+            actual = actual.siguiente;
+        }
+        // No existe: insertar al frente de la cubeta.
+        cubetas[i] = new NodoLista<>(clave, dato, cubetas[i]);
+        n++;
+        if (n > alfaMax * cubetas.length) {
+            rehash();
+        }
+    }
+
+    /**
+     * Retorna el dato asociado a la clave, o null si no esta.
+     */
+    public E obtener(K clave) {
+        if (clave == null) {
+            return null;
+        }
+        int i = indice(clave);
+        NodoLista<K, E> actual = cubetas[i];
+        while (actual != null) {
+            sondas++;
+            if (actual.clave.equals(clave)) {
+                return actual.dato;
+            }
+            actual = actual.siguiente;
+        }
+        return null;
+    }
+
+    /**
+     * Elimina la clave y retorna su dato, o null si no estaba.
+     */
+    public E eliminar(K clave) {
+        if (clave == null) {
+            return null;
+        }
+        int i = indice(clave);
+        NodoLista<K, E> actual = cubetas[i];
+        NodoLista<K, E> previo = null;
+        while (actual != null) {
+            sondas++;
+            if (actual.clave.equals(clave)) {
+                if (previo == null) {
+                    cubetas[i] = actual.siguiente;
+                } else {
+                    previo.siguiente = actual.siguiente;
+                }
+                n--;
+                return actual.dato;
+            }
+            previo = actual;
+            actual = actual.siguiente;
+        }
+        return null;
+    }
+
+    /** Cantidad de cubetas. */
+    public int capacidad() {
+        return cubetas.length;
+    }
+
+    /** Cantidad de claves almacenadas. */
+    public int size() {
+        return n;
+    }
+
+    /** Factor de carga alfa = n / m. */
+    public double factorCarga() {
+        return (double) n / cubetas.length;
+    }
+
+    /** Sondas acumuladas desde la creacion o el ultimo reinicio. */
+    public long sondas() {
+        return sondas;
+    }
+
+    /** Reinicia el contador de sondas. */
+    public void reiniciarSondas() {
+        sondas = 0;
+    }
+
+    /**
+     * Duplica m y reubica todas las claves. O(n) en una sola llamada.
+     */
+    @SuppressWarnings("unchecked")
+    private void rehash() {
+        int mNuevo = cubetas.length * 2;
+        NodoLista<K, E>[] nuevas = (NodoLista<K, E>[]) new NodoLista[mNuevo];
+        for (int i = 0; i < cubetas.length; i++) {
+            NodoLista<K, E> actual = cubetas[i];
+            while (actual != null) {
+                NodoLista<K, E> sig = actual.siguiente;
+                int j = (actual.clave.hashCode() & 0x7fffffff) % mNuevo;
+                actual.siguiente = nuevas[j];
+                nuevas[j] = actual;
+                actual = sig;
+            }
+        }
+        cubetas = nuevas;
+    }
+
+    /**
+     * Una linea por cubeta: "[cubeta] clave1 clave2 ..."
+     * El orden dentro de la cubeta no se evalua.
+     */
+    public String dump() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < cubetas.length; i++) {
+            sb.append('[').append(i).append("]");
+            NodoLista<K, E> actual = cubetas[i];
+            if (actual == null) {
+                sb.append(" (vacia)").append('\n');
+                continue;
+            }
+            while (actual != null) {
+                sb.append(' ').append(actual.clave);
+                actual = actual.siguiente;
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+
+    public String dumpSoloOcupadas() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < cubetas.length; i++) {
+            NodoLista<K, E> actual = cubetas[i];
+            if (actual == null) {
+                continue;
+            }
+            sb.append('[').append(i).append("]");
+            while (actual != null) {
+                sb.append(' ').append(actual.clave);
+                actual = actual.siguiente;
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L1-L20  Javadoc: la tabla guarda pares (clave, dato). "Encadenamiento" =
+        cuando dos claves caen en la misma cubeta se enlazan en una lista.
+        La E genérica es el DATO; acá conviene pensarla como "referencia al
+        Nodo del árbol" (eso hace IndiceDoble). El contador "sondas" es el
+        análogo de "visitas" del árbol: cada nodo de cadena que se mira suma 1.
+
+L21  public class TablaEncadenada<K, E>: sin restricción de Comparable (la
+    tabla NO ordena; solo guarda). Orden y "sacar el k-ésimo" NO son su
+    trabajo: ese es el trade-off con el ABB.
+
+L23-L34  NodoLista<K, E> (clase interna privada y static). Cada elemento de una
+    cubeta es un NodoLista con clave, dato y siguiente (puntero al eslabón de
+    abajo). Es una lista enlazada "a mano": cada elemento es un objeto que
+    guarda un dato y la dirección del siguiente, y la cadena empieza en la
+    cabecera de la cubeta. En Python sería: class NodoLista:
+    def __init__(self, clave, dato, siguiente): ...
+
+L36-L57  Atributos y constructores:
+    - TAM_INICIAL = 11: cantidad de cubetas inicial (número PRIMO, ayuda a
+      repartir mejor los residuos del módulo).
+    - cubetas: el arreglo de cabeceras de lista. En Java un arreglo genérico no
+      se crea directo: (NodoLista<K,E>[]) new NodoLista[m] + @SuppressWarnings
+      ("unchecked").
+    - n: cantidad de claves. alfaMax: factor de carga máximo permitido.
+    - Constructor por defecto delega en el configurable (m=11, alfaMax=1).
+    - El constructor configurable existe para el experimento con m=97 y
+      alfaMax = +infinito (sin rehash nunca).
+
+L60-L62  indice(clave): LA FUNCIÓN DE COMPRESIÓN:
+    h(k) = (k.hashCode() & 0x7fffffff) % m.
+    - hashCode(): método que todo objeto Java tiene; devuelve un int "huella".
+      Para Integer hashCode() es el propio número. En Python: hash(k).
+    - & 0x7fffffff: borra el bit de signo -> cualquier int negativo (incluido
+      Integer.MIN_VALUE = -2147483648) queda positivo.
+    - % m: comprime al rango de cubetas 0..m-1.
+
+L68-L88  insertar(clave, dato):
+    - Null no se admite -> ClaveNulaException.
+    - i = indice(clave); recorre la cubeta i con un while. Cada mirar suma 1 a
+      sondas. Si encuentra la clave: actual.dato = dato (UPDATE, no duplica).
+    - Si no existe: inserta AL FRENTE cubetas[i] = new NodoLista<>(clave, dato,
+      cubetas[i]) (el `siguiente` del nodo nuevo es la vieja cabecera). O(1).
+    - n++; y si n > alfaMax * m -> rehash(). Es la política de crecimiento:
+      el rehash se dispara POR CANTIDAD DE CLAVES, no por clave puntual.
+
+L93-L107 obtener(clave): camino a la cubeta i, recorre la cadena sumando
+    sondas; si la encuentra devuelve el dato; si no, null. NO lanza excepción
+    (la tabla es "de acceso directo"; el que busca decide el código de error).
+    En IndiceDoble, obtener(clave) por la tabla no toca el árbol: por eso el
+    contador de visitas del árbol queda en 0.
+
+L112-L134 eliminar(clave): recorre con dos punteros: actual (el que miro) y
+    previo (el que quedó atrás) para poder "desanudar" la cadena.
+    - Si actual es la cabecera (previo == null): cubetas[i] = actual.siguiente.
+    - Si no: previo.siguiente = actual.siguiente.
+    - n-- y devuelve el dato. Si no estaba, null.
+
+L137-L159 capacidad() (m), size() (n), factorCarga() (alfa = n/m, el cociente
+    cast a double para no truncar: (double) n / m), sondas() y
+    reiniciarSondas() (lectura y cero del medidor).
+
+L164-L179 rehash() (privado): se ejecuta cuando el "salón se llena".
+    - mNuevo = cubetas.length * 2 (doble).
+    - Crea el arreglo nuevo y por CADA cubeta vieja va pasando cada NodoLista
+      a la cubeta nueva que le corresponde con el m nuevo (el módulo cambió,
+      hay que reubicar TODO: O(n) en una sola llamada). Inserta al frente:
+      actual.siguiente = nuevas[j]; nuevas[j] = actual. Se salva `sig` antes de
+      rebobinar: guarda el siguiente antes de mover el nodo.
+    - El costo O(n) del rehash se "amortiza": cada clave participa en pocos
+      rehashes, por eso las inserciones siguen O(1) amortizado.
+
+L185-L218 dump() y dumpSoloOcupadas(): devuelven el estado como texto, una
+    línea por cubeta: "[cubeta] claves...". dump() imprime todas (incluye
+    "(vacia)"), dumpSoloOcupadas omite las vacías (más limpio para la traza).
+    El orden dentro de la cubeta no se evalúa, así que la traza es estable.
+================================================================================
+ARCHIVO: IndiceDoble.java  (composición: árbol + tabla sobre los mismos nodos,
+pertenece al Ejercicio 2)
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO
+--------------------------------------------------------------------------------
+/**
+ * Indice doble: un ABB aumentado que ordena las claves y una tabla de
+ * dispersion por encadenamiento que apunta a los MISMOS nodos del arbol.
+ *
+ * IndiceDoble no reimplementa nada: compone dos estructuras sobre el
+ * mismo conjunto de nodos.
+ *
+ *   - arbol:   ABBAumentado<K, V>, dueno de los nodos.
+ *   - tabla:   TablaEncadenada<K, Nodo<K, V>>, guarda referencias a los
+ *              nodos del arbol (no copias del valor).
+ *
+ * La regla clave: obtener(k) se resuelve SOLO por la tabla, siguiendo la
+ * referencia al nodo. Asi no incrementa arbol.visitas(). Quien busca con
+ * la tabla paga el recorrido de una cubeta, no O(h) comparaciones.
+ *
+ * eliminar debe tocar las DOS estructuras: si solo se borra del arbol,
+ * la tabla queda con una referencia colgante; si solo se borra de la
+ * tabla, el arbol sigue respondiendo kEsimo.
+ *
+ * @param <K> tipo de la clave, comparable
+ * @param <V> tipo del valor asociado
+ */
+public class IndiceDoble<K extends Comparable<? super K>, V> {
+
+    private final ABBAumentado<K, V> arbol;
+    private final TablaEncadenada<K, ABBAumentado.Nodo<K, V>> tabla;
+
+    /** Indice doble vacio (m = 11, alfaMax = 1). */
+    public IndiceDoble() {
+        this.arbol = new ABBAumentado<>();
+        this.tabla = new TablaEncadenada<>();
+    }
+
+    /** Indice doble con tabla configurable (experimento del TP). */
+    public IndiceDoble(int m, double alfaMax) {
+        this.arbol = new ABBAumentado<>();
+        this.tabla = new TablaEncadenada<>(m, alfaMax);
+    }
+
+    /**
+     * Inserta (o actualiza) en el arbol y registra en la tabla la
+     * referencia al nodo correspondiente.
+     */
+    public void agregar(K clave, V valor) {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        arbol.agregar(clave, valor);
+        tabla.insertar(clave, arbol.nodoDe(clave));
+    }
+
+    /**
+     * Resuelve solo por la tabla. No incrementa arbol.visitas().
+     */
+    public V obtener(K clave) throws ClaveInexistenteException {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        ABBAumentado.Nodo<K, V> nodo = tabla.obtener(clave);
+        if (nodo == null) {
+            throw new ClaveInexistenteException("Clave no encontrada: " + clave);
+        }
+        return nodo.valor();
+    }
+
+    /** Mismo que obtener pero devolviendo el Nodo (util para pruebas). */
+    public ABBAumentado.Nodo<K, V> obtenerNodo(K clave) {
+        if (clave == null) {
+            return null;
+        }
+        return tabla.obtener(clave);
+    }
+
+    /** Elimina de ambas estructuras y retorna el valor. */
+    public V eliminar(K clave) throws ClaveInexistenteException {
+        if (clave == null) {
+            throw new ClaveNulaException("No se admiten claves nulas.");
+        }
+        V valor = arbol.eliminar(clave);
+        tabla.eliminar(clave);
+        return valor;
+    }
+
+    /** k-esimo menor; delega en el arbol (O(h)). */
+    public K kEsimo(int k) {
+        return arbol.kEsimo(k);
+    }
+
+    /** Cantidad de claves en [a, b]; delega en el arbol (O(h)). */
+    public int consultarRango(K a, K b) {
+        return arbol.consultarRango(a, b);
+    }
+
+    /** Indica si la clave esta (por la tabla). */
+    public boolean contiene(K clave) {
+        return tabla.obtener(clave) != null;
+    }
+
+    /** Las dos estructuras tienen que reportar el mismo n. */
+    public int size() {
+        return arbol.size();
+    }
+
+    /** Arbol aumentado interno (para pruebas y medidas). */
+    public ABBAumentado<K, V> arbol() {
+        return arbol;
+    }
+
+    /** Tabla interna (para pruebas y medidas). */
+    public TablaEncadenada<K, ABBAumentado.Nodo<K, V>> tabla() {
+        return tabla;
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L1-L22  Javadoc: el "índice doble" NO inventa estructuras nuevas: usa un ABB y
+    una tabla que comparten los MISMOS objetos Nodo. La tabla guarda
+    REFERENCIAS a los nodos del árbol, nunca copias del valor. Dos reglas que
+    hay que saber defender:
+      1. obtener(k) resuelve POR LA TABLA (una cubeta, 0 visitas del árbol).
+      2. eliminar(k) toca LAS DOS estructuras (árbol y tabla), o queda
+         inconsistente.
+
+L23  public class IndiceDoble<K extends Comparable<? super K>, V>: K sigue
+    needing Comparable porque delega en el ABB.
+
+L25-L26  Los dos atributos finales (final [reservada: la referencia no cambia
+    después del constructor]):
+    - arbol: ABBAumentado<K, V> (el dueño real de los nodos).
+    - tabla: TablaEncadenada<K, ABBAumentado.Nodo<K, V>>. Leé el tipo a media
+      voz: "tabla que guarda, para cada clave K, un Nodo<K,V> del ABB".
+
+L29-L38  Dos constructores: el por defecto (m=11, alfaMax=1) y el configurable
+    (m, alfaMax) que usa el experimento (m=97, alfaMax=infinito).
+
+L44-L50  agregar(clave, valor):
+    - arbol.agregar(clave, valor) primero (inserta o actualiza el Nodo).
+    - tabla.insertar(clave, arbol.nodoDe(clave)) DESPUÉS: obtiene la referencia
+      al Nodo recién (re)usado y la guarda en la cubeta correcta. Como la tabla
+      y el árbol usan la misma función compareTo/hashCode por clave, caen en la
+      misma entrada. Esa referencia ES el puente: cambiar el valor se ve desde
+      cualquier estructura.
+
+L55-L64  obtener(clave): el corazón del negocio.
+    - tabla.obtener(clave) -> devuelve el Nodo directamente (camina UNA cubeta,
+      suma sondas, NO toca arbol.visitas()).
+    - Si la tabla no lo tiene, lanza ClaveInexistenteException.
+    - return nodo.valor() (lee el valor del nodo compartido).
+    ESTO es lo que demuestra la Fase C del test: indice.obtener(70) deja
+    arbol.visitas() en 0, mientras que arbol.obtener(70) gastó 2 visitas.
+
+L67-L72  obtenerNodo(clave): igual pero pensado para las pruebas (verificar la
+    identidad de la referencia). Null si no está.
+
+L75-L82  eliminar(clave):
+    - arbol.eliminar(clave) borra el nodo del árbol y devuelve su valor (al
+      borrar con dos hijos el sucesor se MUDÓ de posición, y como la tabla
+      guarda la MISMA referencia de objeto, la tabla sigue apuntando al nodo
+      correcto aunque se haya movido).
+    - tabla.eliminar(clave) borra la entrada de la cubeta.
+    - Si solo hicieras el primero, la tabla quedaría con un "hueco" roto
+      (referencia a un nodo que el árbol ya no considera suyo).
+
+L85-L97  kEsimo y consultarRango DELEGAN en el árbol (solo él sabe ordenar).
+    contiene delega en la tabla (acceso directo: O(1) promedio).
+
+L99-L112 size(): reporta arbol.size() (los tests verifican que tabla.size()
+    coincida SIEMPRE, o sea sincronía). arbol() y tabla() son getters para que
+    los tests y el experimento lean los contadores internos (visitas, sondas,
+    factorCarga, capacidad).
+================================================================================
+ARCHIVO: TestABBAumentado.java  (pruebas del Ejercicio 1)
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO (métodos principales; al final se resumen secuencia/permutacionAleatoria)
+--------------------------------------------------------------------------------
+import java.util.Random;
+
+/**
+ * Clase de prueba del Ejercicio 1 (ABBAumentado).
+ *
+ * 1. Reproduce la traza obligatoria: inserciones, Fase B (consultas con
+ *    contador de visitas) y Fase C (eliminar 30, con mudanza del sucesor).
+ * 2. Verifica el recorrido por for-each.
+ * 3. Genera la tabla de visitas para N in {2000,4000,6000,8000,10000}
+ *    comparando un arbol aleatorio (semilla 2026, Fisher-Yates) contra un
+ *    arbol degenerado (insercion ordenada).
+ *
+ * Los resultados de las columnas deterministas deben ser exactos:
+ *   h_ord = N-1, vis_kEsimo_ord = N/2, vis_rango_ing = N.
+ */
+public class TestABBAumentado {
+
+    public static void main(String[] args) {
+        System.out.println("=== TRAZA OBLIGATORIA (inserciones) + FASE B + FASE C ===");
+        ABBAumentado<Integer, String> arbol = arbolTraza();
+
+        System.out.println("\n--- FASE B: CONSULTAS CON VISITAS ---");
+        ejecutarFaseB(arbol);
+
+        System.out.println("\n--- FASE C: eliminar(30) ---");
+        ejecutarFaseC(arbol);
+
+        System.out.println("\n=== 4. RECORRIDO FOR-EACH (inorden) ===");
+        verificarForEach();
+
+        System.out.println("\n=== 5. TABLA DE VISITAS (N aleatorio vs ordenado) ===");
+        tablaDeVisitas();
+    }
+
+    private static ABBAumentado<Integer, String> arbolTraza() {
+        ABBAumentado<Integer, String> arbol = new ABBAumentado<>();
+        // El enunciado quiere un arbol de la traza con 9 claves y altura 3:
+        // los valores son "P" + clave; usa el mismo orden de insercion de la tabla.
+        int[] claves = {50, 30, 70, 20, 40, 60, 80, 35, 65};
+        for (int k : claves) {
+            arbol.agregar(k, "P" + k);
+            System.out.printf("%-14s -> %-48s h=%-2d size=%-2d consistentes=%s%n",
+                    "agregar(" + k + ")", arbol, arbol.altura(),
+                    arbol.size(), arbol.tamanosConsistentes());
+        }
+        return arbol;
+    }
+
+    private static void ejecutarFaseB(ABBAumentado<Integer, String> arbol) {
+        arbol.reiniciarVisitas();
+        int r = arbol.kEsimo(6);
+        System.out.println("kEsimo(6) -> " + r + " | visitas=" + arbol.visitas()
+                + " (esperado: 3)");
+
+        arbol.reiniciarVisitas();
+        r = arbol.cuantosMenores(65);
+        System.out.println("cuantosMenores(65) -> " + r + " | visitas=" + arbol.visitas()
+                + " (esperado: 4)");
+
+        arbol.reiniciarVisitas();
+        r = arbol.cuantosMenores(35);
+        System.out.println("cuantosMenores(35) -> " + r + " | visitas=" + arbol.visitas()
+                + " (esperado: 4)");
+
+        arbol.reiniciarVisitas();
+        r = arbol.consultarRango(35, 65);
+        System.out.println("consultarRango(35, 65) -> " + r + " | visitas=" + arbol.visitas()
+                + " (O(h)");
+
+        arbol.reiniciarVisitas();
+        r = arbol.consultarRangoIngenuo(35, 65);
+        System.out.println("consultarRangoIngenuo(35, 65) -> " + r + " | visitas=" + arbol.visitas()
+                + " (esperado: 9)");
+
+        try {
+            arbol.reiniciarVisitas();
+            Integer s40 = arbol.sucesor(40);
+            System.out.println("sucesor(40) -> " + s40 + " | visitas=" + arbol.visitas());
+
+            arbol.reiniciarVisitas();
+            Integer s80 = arbol.sucesor(80);
+            System.out.println("sucesor(80) -> " + s80 + " | visitas=" + arbol.visitas());
+
+            arbol.reiniciarVisitas();
+            Integer p35 = arbol.predecesor(35);
+            System.out.println("predecesor(35) -> " + p35 + " | visitas=" + arbol.visitas());
+
+            arbol.reiniciarVisitas();
+            int rango50 = arbol.rango(50);
+            System.out.println("rango(50) -> " + rango50 + " | visitas=" + arbol.visitas());
+        } catch (ClaveInexistenteException e) {
+            System.out.println("Error inesperado en Fase B: " + e.getMessage());
+        }
+    }
+
+    private static void ejecutarFaseC(ABBAumentado<Integer, String> arbol) {
+        try {
+            String eliminado = arbol.eliminar(30);
+            System.out.println("eliminar(30) -> \"" + eliminado + "\" | " + arbol
+                    + " | h=" + arbol.altura() + " size=" + arbol.size()
+                    + " consistentes=" + arbol.tamanosConsistentes());
+            System.out.println("kEsimo(2) = " + arbol.kEsimo(2)
+                    + " | consultarRango(35,65) = " + arbol.consultarRango(35, 65)
+                    + " | sucesor(20) = " + arbol.sucesor(20)
+                    + " | contiene(30) = " + arbol.contiene(30));
+        } catch (ClaveInexistenteException e) {
+            System.out.println("Error inesperado en Fase C: " + e.getMessage());
+        }
+    }
+
+    private static void verificarForEach() {
+        ABBAumentado<Integer, String> arbol = new ABBAumentado<>();
+        int[] claves = {50, 30, 70, 20, 40, 60, 80, 35, 65};
+        for (int k : claves) {
+            arbol.agregar(k, "P" + k);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Integer k : arbol) {
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append(k);
+        }
+        boolean ok = sb.toString().equals("20 30 35 40 50 60 65 70 80");
+        System.out.println("for-each -> [" + sb + "]  " + (ok ? "OK" : "ERROR"));
+    }
+
+    private static void tablaDeVisitas() {
+        int[] tamanos = {2000, 4000, 6000, 8000, 10000};
+        System.out.printf("%-6s %-8s %-8s %-12s %-12s %-12s %-12s%n",
+                "N", "h_aleat", "h_ord", "vis_kEsimo_aleat", "vis_kEsimo_ord", "vis_rango_aum", "vis_rango_ing");
+        for (int n : tamanos) {
+            int[] perm = permutacionAleatoria(n);
+            int[] ordenado = secuencia(n);
+
+            ABBAumentado<Integer, String> aleat = new ABBAumentado<>();
+            for (int v : perm) {
+                aleat.agregar(v, "P" + v);
+            }
+            ABBAumentado<Integer, String> ord = new ABBAumentado<>();
+            for (int v : ordenado) {
+                ord.agregar(v, "P" + v);
+            }
+
+            int hA = aleat.altura();
+            int hO = ord.altura();
+
+            aleat.reiniciarVisitas();
+            aleat.kEsimo(n / 2);
+            long visA = aleat.visitas();
+
+            ord.reiniciarVisitas();
+            ord.kEsimo(n / 2);
+            long visO = ord.visitas();
+
+            Integer a = aleat.kEsimo(n / 4);
+            Integer b = aleat.kEsimo(3 * n / 4);
+            aleat.reiniciarVisitas();
+            aleat.consultarRango(a, b);
+            long visRangoAum = aleat.visitas();
+
+            aleat.reiniciarVisitas();
+            aleat.consultarRangoIngenuo(a, b);
+            long visRangoIng = aleat.visitas();
+
+            System.out.printf("%-6d %-8d %-8d %-12d %-12d %-12d %-12d%n",
+                    n, hA, hO, visA, visO, visRangoAum, visRangoIng);
+        }
+    }
+
+    private static int[] secuencia(int n) {
+        int[] a = new int[n];
+        for (int i = 0; i < n; i++) {
+            a[i] = i + 1;
+        }
+        return a;
+    }
+
+    // Permutacion de 1..n con semilla 2026 (Fisher-Yates).
+    private static int[] permutacionAleatoria(int n) {
+        Random rng = new Random(2026);
+        int[] a = secuencia(n);
+        for (int i = n - 1; i > 0; i--) {
+            int j = rng.nextInt(i + 1);
+            int tmp = a[i];
+            a[i] = a[j];
+            a[j] = tmp;
+        }
+        return a;
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L8-L15  Javadoc que resume qué verifica y cuáles columnas son deterministas.
+        La semilla fija (2026) hace que la permutación sea REPRODUCIBLE: los
+        números del experimento no cambian entre corridas.
+
+L18-L33  main(): el "guion" de la corrida. Llama de una: arbolTraza(),
+    ejecutarFaseB(), ejecutarFaseC(), verificarForEach(), tablaDeVisitas().
+
+L35-L47  arbolTraza(): arma el árbol de la TRAZA OBLIGATORIA con las 9 claves
+    {50,30,70,20,40,60,80,35,65} en ese orden, que es el que produce altura 3.
+    Después de cada agregar imprime el toString() del árbol con el tamano
+    aumentado entre paréntesis: 20(1) 30(3) 35(1) 40(1) 50(5) 60(1) 65(2)
+    70(3) 80(1). Esa impresión gradual es la evidencia de que el invariante
+    RE-CALCULA el tamano en cada inserción (nodo 65 pasa de (1) a (2) cuando
+    se agrega 65).
+    printf [reservada: imprime con formato tipo C/Python, %-14s alinea a la
+    izquierda 14 caracteres, %d entero, %s texto].
+
+L49-L94  ejecutarFaseB(): las consultas pedidas con el CONTADOR de visitas.
+    - Antes de cada consulta: reiniciarVisitas() para medir SOLO esa operación.
+    - kEsimo(6) en 9 nodos -> visita 3 (baja raiz 50 -> 70 -> 60 exactamente).
+      "esperado: 3" está escrito en el propio test.
+    - cuantosMenores(65) -> 4 (visitas: baja 50, 70, 60, 65: 4).
+    - consultarRango(35,65) -> 4 claves en el intervalo; su costo son 2-3
+      caminos (por eso no se estampa un "esperado" de visitas: depende de la
+      cantidad exacta de bajadas).
+    - consultarRangoIngenuo(35,65) -> 9 visitas (recorre TODOS los nodos).
+    - sucesor(40)=50, sucesor(80)=null, predecesor(35)=30, rango(50)=6.
+      El try/catch alrededor existe porque estos métodos pueden lanzar la
+      excepción CHEQUEADA (aunque acá la clave siempre existe) y el main los
+      llama sin throws, así que hay que manejarla sí o sí.
+
+L96-L109 ejecutarFaseC(): elimina 30 (nodo con DOS hijos). La salida muestra el
+    árbol tras la MUDANZA del sucesor: "... 35(3) 40(1) 50(8) 60(2) 65(1)
+    70(4) 80(1) | h=3 size=8 consistentes=true". El nodo 30 desapareció y 35
+    quedó donde estaba 30 con tamano 3. Después verifica que las operaciones
+    siguen funcionando (kEsimo(2)=35, rango [35,65]=4, sucesor(20)=30,
+    y contiene(30)=false).
+
+L111-L126 verificarForEach(): reconstruye el árbol y lo recorre con "for (Integer
+    k : arbol)". Como el iterador es inorden, espera la lista exacta
+    "20 30 35 40 50 60 65 70 80". Si algo da distinto imprime ERROR. El
+    iterador no suma visitas (no avisaVisita), por eso no contamina medidas.
+
+L128-L194 tablaDeVisitas(): EL EXPERIMENTO del Ejercicio 1.
+    - Para N en 2000..10000 construye dos árboles: aleat (inserta la
+      permutación con semilla 2026) y ord (inserta 1..N EN ORDEN, que
+      degenera en una lista de altura N-1).
+    - Mide con reiniciar/leer visitas: kEsimo(N/2), consultarRango y la
+      versión ingenua. Las llamadas se hacen SIN guardar el resultado (el dato
+      a comparar es el contador de visitas, no el valor devuelto).
+    - Los números a defender (mirá el javadoc del archivo original, que está
+      arriba del método descomentado como TENDENCIAS):
+        * h_ord = N-1 y vis_kEsimo_ord = N/2: insertar en orden cuelga cada
+          clave a la derecha = lista enlazada; kEsimo(N/2) en una lista
+          recorre exactamente N/2 nodos. Lo que O(h)=O(N).
+        * vis_rango_ing = N SIEMPRE (recorre los N nodos). vis_rango_aum =
+          46-59 aunque N crezca 1000 veces: solo baja 2-3 caminos de altura
+          log2(N). Esa brecha es la victoria del campo aumentado.
+        * En el árbol chico (9 nodos) el aumentado paga MÁS visitas (12) que
+          el ingenuo (9): son "costos fijos" de 2-3 caminos; la brecha
+          aparece recién cuando n >> h (por eso el experimento usa N grandes).
+
+L196-L215 secuencia() y permutacionAleatoria(): secuencia devuelve 1..n;
+    permutacionAleatoria mezcla con Fisher-Yates [el algoritmo estándar para
+    barajar un arreglo en O(n)] usando la misma semilla 2026.
+================================================================================
+ARCHIVO: TestIndiceDoble.java  (pruebas y experimentos del Ejercicio 2)
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO (métodos principales; la permutacion es igual a la del otro test)
+--------------------------------------------------------------------------------
+import java.util.Random;
+
+/**
+ * Clase de prueba del Ejercicio 2 (IndiceDoble).
+ *
+ * Reproduce la traza obligatoria (Fases A-D) y genera las dos tablas del
+ * experimento:
+ *
+ *   (1) Indice doble con rehash: N obtener por arbol vs por indice.
+ *   (2) Tabla sola con m=97 fijo y sin rehash: alfa y sondas/N.
+ *
+ * La regla central: indice.obtener(k) resuelve por la tabla y NO
+ * incrementa arbol.visitas(). En la Fase C hay que obtener 0 visitas
+ * del arbol y <= 2 sondas de la tabla.
+ */
+public class TestIndiceDoble {
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("=== TRAZA OBLIGATORIA ===");
+        ejecutarTraza();
+
+        System.out.println("\n=== EXPERIMENTO 1: INDICE DOBLE CON REHASH ===");
+        experimentoIndiceDoble();
+
+        System.out.println("\n=== EXPERIMENTO 2: TABLA SOLA, m=97 FIJO, SIN REHASH ===");
+        experimentoTablaFija97();
+    }
+
+    private static IndiceDoble<Integer, String> indiceTraza() throws ClaveInexistenteException {
+        IndiceDoble<Integer, String> indice = new IndiceDoble<>();
+        int[] claves = {50, 30, 70, 20, 40, 60, 80, 35, 65};
+        for (int k : claves) {
+            indice.agregar(k, "P" + k);
+        }
+        return indice;
+    }
+
+    private static void ejecutarTraza() throws ClaveInexistenteException {
+        System.out.println("-- Fase A: insertar las 9 claves del Ejercicio 1 --");
+        IndiceDoble<Integer, String> indice = indiceTraza();
+        System.out.println(indice.tabla().dumpSoloOcupadas());
+        System.out.println("arbol n=" + indice.arbol().size()
+                + " | tabla n=" + indice.tabla().size()
+                + " | m=" + indice.tabla().capacidad());
+
+        int[][] esperadosCubeta = {
+                {35, 2}, {80, 3}, {70, 4}, {60, 5}, {50, 6},
+                {40, 7}, {30, 8}, {20, 9}, {65, 10}};
+        boolean faseAOk = true;
+        for (int[] par : esperadosCubeta) {
+            int clave = par[0];
+            int cubetaEsperada = par[1];
+            int cubetaReal = (clave & 0x7fffffff) % indice.tabla().capacidad();
+            boolean ok = cubetaReal == cubetaEsperada
+                    && indice.obtenerNodo(clave).valor().equals("P" + clave);
+            faseAOk = faseAOk && ok;
+            System.out.println("  " + clave + " (cubeta " + cubetaReal + ", esperada "
+                    + cubetaEsperada + ", valor P" + clave + ") "
+                    + (ok ? "OK" : "ERROR"));
+        }
+        System.out.println("Fase A: " + (faseAOk ? "OK" : "ERROR"));
+
+        System.out.println("-- Fase B: agregar(61) y agregar(41) --");
+        indice.agregar(61, "P61");
+        indice.agregar(41, "P41");
+        System.out.println(indice.tabla().dumpSoloOcupadas());
+        System.out.println("arbol n=" + indice.arbol().size()
+                + " | tabla n=" + indice.tabla().size()
+                + " | arbol.toString=" + indice.arbol());
+
+        System.out.println("-- Fase C: indice.obtener(70) --");
+        indice.arbol().reiniciarVisitas();
+        indice.tabla().reiniciarSondas();
+        String v70 = indice.obtener(70);
+        System.out.println("resultado=" + v70
+                + " | arbol.visitas=" + indice.arbol().visitas()
+                + " (esperado 0) | tabla.sondas=" + indice.tabla().sondas()
+                + " (esperado <= 2)");
+
+        indice.arbol().reiniciarVisitas();
+        String v70Arbol = indice.arbol().obtener(70);
+        System.out.println("arbol.obtener(70) sobre el mismo indice -> " + v70Arbol
+                + " | arbol.visitas=" + indice.arbol().visitas()
+                + " (esperado 2: camino 50->70)");
+
+        System.out.println("-- Fase D: indice.eliminar(30) --");
+        String eliminado = indice.eliminar(30);
+        System.out.println("eliminado=" + eliminado + " | toString=" + indice.arbol()
+                + " | n=" + indice.size());
+        System.out.println(indice.tabla().dumpSoloOcupadas());
+        System.out.println("contiene(30)=" + indice.contiene(30)
+                + " | arbol.contiene(30)=" + indice.arbol().contiene(30)
+                + " | kEsimo(2)=" + indice.kEsimo(2)
+                + " | indice.obtener(35)=" + indice.obtener(35)
+                + " | size arbol=" + indice.arbol().size()
+                + " | size tabla=" + indice.tabla().size());
+    }
+
+    private static void experimentoIndiceDoble() throws ClaveInexistenteException {
+        int[] tamanos = {2000, 4000, 6000, 8000, 10000};
+        System.out.printf("%-7s %-14s %-16s %-6s %-6s%n",
+                "N", "vis_ABB_get", "sondas_hash_get", "alfa", "m");
+        for (int n : tamanos) {
+            int[] perm = permutacion(n);
+            IndiceDoble<Integer, String> indice = new IndiceDoble<>();
+            for (int v : perm) {
+                indice.agregar(v, "P" + v);
+            }
+            indice.arbol().reiniciarVisitas();
+            indice.tabla().reiniciarSondas();
+            for (int v : perm) {
+                indice.arbol().obtener(v);
+                indice.obtener(v);
+            }
+            System.out.printf("%-7d %-14d %-16d %-6.3f %-6d%n",
+                    n,
+                    indice.arbol().visitas(),
+                    indice.tabla().sondas(),
+                    indice.tabla().factorCarga(),
+                    indice.tabla().capacidad());
+        }
+    }
+
+    private static void experimentoTablaFija97() {
+        int[] tamanos = {2000, 4000, 6000, 8000, 10000};
+        System.out.printf("%-7s %-8s %-10s%n", "N", "alfa", "sondas/N");
+        for (int n : tamanos) {
+            TablaEncadenada<Integer, Integer> tabla = new TablaEncadenada<>(97, Double.POSITIVE_INFINITY);
+            for (int i = 1; i <= n; i++) {
+                tabla.insertar(i, i);
+            }
+            tabla.reiniciarSondas();
+            for (int i = 1; i <= n; i++) {
+                tabla.obtener(i);
+            }
+            System.out.printf("%-7d %-8.3f %-10.4f%n",
+                    n, tabla.factorCarga(), (double) tabla.sondas() / n);
+        }
+    }
+
+    // Permutacion de 1..n con semilla 2026 (Fisher-Yates).
+    private static int[] permutacion(int n) {
+        Random rng = new Random(2026);
+        int[] a = new int[n];
+        for (int i = 0; i < n; i++) {
+            a[i] = i + 1;
+        }
+        for (int i = n - 1; i > 0; i--) {
+            int j = rng.nextInt(i + 1);
+            int tmp = a[i];
+            a[i] = a[j];
+            a[j] = tmp;
+        }
+        return a;
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA
+--------------------------------------------------------------------------------
+L8-L16  Javadoc: este test hace dos cosas: reproducir la TRAZA OBLIGATORIA
+    (Fases A-D) y generar las DOS tablas del experimento. La regla central que
+    todo el ejercicio quiere demostrar se declara acá: indice.obtener(k) NO
+    incrementa arbol.visitas() (resuelve por la tabla).
+
+L18-L27  main() throws Exception: el throws en main es el "paraguas" para la
+    excepción CHEQUEADA (ClaveInexistenteException); así el main no necesita
+    try/catch alrededor de todo. Llama traza, experimento 1 y experimento 2.
+
+L29-L36  indiceTraza(): inserta las MISMAS 9 claves del Ejercicio 1 en un
+    IndiceDoble (no en un ABB suelto): herramienta la composición completa.
+
+L38-L97  ejecutarTraza(): las 4 fases.
+    FASE A: después de insertar, dumpSoloOcupadas() muestra cuáles cubetas
+    quedaron ocupadas. Además verifica matemáticamente la dispersión: calcula
+    (clave & 0x7fffffff) % m a mano y comprueba que sea la cubeta esperada y
+    que el nodo esté con su valor. Con m=11 esas claves caen en cubetas 2..10.
+    FASE B: agregar(61) y agregar(41) (las claves con que el enunciado sigue
+    la traza). Imprime tabla y árbol.
+    FASE C: el momento CLAVE (mirá los "(esperado 0)" y "(esperado <= 2)"):
+      1) indice.obtener(70) con contadores en cero -> arbol.visitas = 0 y
+         tabla.sondas <= 2 (70 está al frente de su cubeta [4]).
+      2) arbol.obtener(70) sobre el mismo índice -> 2 visitas (camino 50->70).
+      La comparación de ambos es la prueba de que obtener NO va al árbol.
+      Si tu IndiceDoble.obtener buscara en el árbol, el primer contador
+      mostraría visitas y la defensa te lo mata.
+    FASE D: indice.eliminar(30): borra de las DOS estructuras. Después
+    contiene(30)=false en las dos, arbol y tabla reportan el MISMO n, y la
+    tabla ya no lista a 30 en su cubeta. La sincronía tras eliminar es la
+    otra regla del enunciado.
+
+L99-L122 experimentoIndiceDoble(): EXPERIMENTO 1 (índice doble con rehash).
+    - Inserta los N valores permutados (semilla 2026), reinicia ambos contadores
+      y luego hace para cada clave: arbol.obtener(v) (sube VISITAS) e
+      indice.obtener(v) (sube SONDAS).
+    - Columnas: vis_ABB_get suma O(N*log N) comparaciones; sondas_hash_get
+      queda pegado a N (con rehash el factor de carga se mantiene bajo y cada
+      búsqueda recorre una cubeta casi vacía). m salta en potencias de 2 según
+      alfaMax=1 (n > 1*m dispara rehash). Factor de carga alfa queda ~<=1.
+    - Lectura correcta del resultado: el hash casi no colisiona sobre claves
+      1..N, así que sondas_hash_get == N (1 sonda por búsqueda). No es bug: es
+      un hash perfecto sobre un universo chico, y es exactamente la razón de
+      ser del índice doble.
+
+L124-L139 experimentoTablaFija97(): EXPERIMENTO 2 (tabla SOLA, m=97 fijo).
+    - TablaEncadenada<>(97, Double.POSITIVE_INFINITY): con alfaMax = infinito
+      NUNCA dispara rehash -> m queda clavado en 97 (por eso alfa = N/97 crece
+      lineal 20.6 -> 103).
+    - Mide sondas promedio: sondas/N. Es la demostración del encadenamiento:
+      como cada cubeta es una lista de largo alfa, buscar esperado =
+      Theta(1 + alfa). La columna sondas/N CRECE con N (no se queda plana):
+      si te quedara constante, tu contador de sondas no cuenta nada.
+
+L142-L155 permutacion(n): igual que en TestABBAumentado (Fisher-Yates, semilla
+    2026). El experimento siempre usa el MISMO orden de claves, así los
+    números son comparables entre TP y defensa.
+================================================================================
+ARCHIVO: TestValidacion.java  (la misma suite que hace "trampa" para probar todo)
+================================================================================
+
+--------------------------------------------------------------------------------
+CÓDIGO (métodos principales y un resumen de los 9 grupos que corre main)
+--------------------------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+/**
+ * Validacion exhaustiva del TP2. Verifica automaticamente que la
+ * implementacion sea correcta frente a un oraculo (fuerza bruta) y
+ * cubre los casos limite que pide el enunciado.
+ *
+ * 1. Orden de insercion degenerado (lista): kEsimo vs arreglo ordenado.
+ * 2. kEsimo(i) para todo i, sobre arboles aleatorios con inserciones
+ *    y borrados intercalados.
+ * 3. cuantosMenores / consultarRango / rango vs fuerza bruta.
+ * 4. Casos limite: kEsimo(0), kEsimo(n+1), null, rango a>b.
+ * 5. Clave duplicada actualiza valor sin cambiar estructura ni tamanos.
+ * 6. Genericos con String como clave.
+ * 7. El sucesor MUDADO conserva su identidad de objeto (no se copio clave).
+ * 8. IndiceDoble: n arbol == n tabla en todo momento, obtener por tabla
+ *    con 0 visitas del arbol, sincronia tras eliminar.
+ * 9. Rehash forzado (alfaMax muy chico): todas las claves accesibles.
+ */
+public class TestValidacion {
+
+    private static int errores = 0;
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("=== 1. ABB degenerado: kEsimo vs fuerza bruta ===");
+        testABBDegenerado();
+
+        System.out.println("=== 2. Intercalar insert/delete con oracle ===");
+        testAccionesAleatorias();
+
+        System.out.println("=== 3. cuantosMenores / consultarRango / rango ===");
+        testRangos();
+
+        System.out.println("=== 4. Casos limite y excepciones ===");
+        testExcepciones();
+
+        System.out.println("=== 5. Clave duplicada actualiza valor ===");
+        testDuplicada();
+
+        System.out.println("=== 6. Genericidad: claves String ===");
+        testStrings();
+
+        System.out.println("=== 7. Identidad del nodo mudado en eliminar ===");
+        testIdentidadSucesor();
+
+        System.out.println("=== 8. IndiceDoble sincronizado ===");
+        testIndiceDobleSincro();
+
+        System.out.println("=== 9. Rehash forzado ===");
+        testRehashForzado();
+
+        System.out.println("\n=== RESULTADO: " + (errores == 0 ? "TODOS LOS TEST OK" : errores + " ERRORES") + " ===");
+    }
+
+    private static void ok(boolean condicion, String mensaje) {
+        if (condicion) {
+            System.out.println("  [OK] " + mensaje);
+        } else {
+            errores++;
+            System.out.println("  [ERROR] " + mensaje);
+        }
+    }
+
+    private static void testABBDegenerado() throws ClaveInexistenteException {
+        ABBAumentado<Integer, String> arbol = new ABBAumentado<>();
+        int n = 1000;
+        for (int i = 1; i <= n; i++) {
+            arbol.agregar(i, "P" + i);
+        }
+        boolean okTodo = true;
+        for (int k = 1; k <= n; k++) {
+            if (arbol.kEsimo(k) != k) {
+                okTodo = false;
+                break;
+            }
+        }
+        ok(okTodo, "kEsimo i == i para i in 1..1000 (arbol lista)");
+        ok(arbol.altura() == n - 1, "altura lista == n-1 (" + arbol.altura() + ")");
+        ok(arbol.sucesor(n) == null, "sucesor del maximo es null");
+        ok(arbol.predecesor(1) == null, "predecesor del minimo es null");
+        ok(arbol.consultarRango(1, n) == n, "rango completo == n");
+    }
+
+    // (En el archivo real continúan testAccionesAleatorias, testRangos,
+    //  testExcepciones, testDuplicada, testStrings, testIdentidadSucesor,
+    //  testIndiceDobleSincro y testRehashForzado; las ideas se explican en
+    //  el resumen de métodos.)
+
+    private static void testIdentidadSucesor() throws ClaveInexistenteException {
+        ABBAumentado<Integer, String> arbol = new ABBAumentado<>();
+        int[] claves = {50, 30, 70, 20, 40, 60, 80, 35, 65};
+        for (int c : claves) {
+            arbol.agregar(c, "P" + c);
+        }
+        ABBAumentado.Nodo<Integer, String> nodo35 = arbol.nodoDe(35);
+        // 30 tiene dos hijos; el sucesor inorden es 35.
+        arbol.eliminar(30);
+        ABBAumentado.Nodo<Integer, String> nodo35TrasEliminar = arbol.nodoDe(35);
+        ok(nodo35 == nodo35TrasEliminar,
+                "el nodo 35 murio y sigue siendo el MISMO objeto (mudanza, no copia)");
+        ok(nodo35.clave() == 35 && nodo35.valor().equals("P35"),
+                "el nodo conserva clave y valor correctos");
+        ok(arbol.nodoDe(30) == null, "el nodo 30 ya no esta");
+    }
+
+    private static void testRehashForzado() throws ClaveInexistenteException {
+        // alfaMax minusculo fuerza rehash continuo
+        IndiceDoble<Integer, String> indice = new IndiceDoble<>(11, 0.3);
+        Random rng = new Random(5);
+        List<Integer> presentes = new ArrayList<>();
+        for (int i = 0; i < 500; i++) {
+            int clave = rng.nextInt(20000) + 1;
+            if (!presentes.contains(clave)) {
+                indice.agregar(clave, "P" + clave);
+                presentes.add(clave);
+            }
+        }
+        boolean okRehash = true;
+        for (Integer c : presentes) {
+            try {
+                String v = indice.obtener(c);
+                if (v == null || !v.equals("P" + c)) {
+                    okRehash = false;
+                    break;
+                }
+                if (indice.arbol().nodoDe(c).clave().intValue() != c) {
+                    okRehash = false;
+                    break;
+                }
+            } catch (ClaveInexistenteException e) {
+                okRehash = false;
+                break;
+            }
+        }
+        ok(okRehash, "tras " + indice.tabla().capacidad() + " rehashes alfaMax=0.3, "
+                + presentes.size() + " claves siguen accesibles");
+        ok(indice.arbol().size() == indice.tabla().size() && indice.tabla().size() == presentes.size(),
+                "size sincronizado tras muchos rehashes (m=" + indice.tabla().capacidad() + ")");
+    }
+}
+
+--------------------------------------------------------------------------------
+EXPLICACIÓN LÍNEA POR LÍNEA  (qué probar y cómo)
+--------------------------------------------------------------------------------
+L1-L4  import [reservada: trae clases de otra biblioteca] de tres paquetes:
+    ArrayList y List (listas que crecen solas, lo más parecido a la list de
+    Python: append/remove/contains) y Random (números al azar).
+
+L6-L21  Javadoc: explica la palabra "oráculo". Un ORÁCULO es un "juez"
+    independiente y tonto pero 100% correcto: en este caso, ARREGLOS ORDENADOS
+    y recuentos por fuerza bruta (contar uno por uno). Si tu árbol da lo mismo
+    que el arreglo ordenado en MUCHOS casos, tu árbol está bien. Los 9 puntos
+    son los que pide explícitamente el enunciado.
+
+L24  private static int errores = 0: un contador GLOBAL de la clase. Es de
+    tipo static [reservada: pertenece a la CLASE, no a cada objeto], así todos
+    los métodos comparten el mismo número.
+
+L26-L55  main(): corre los 9 grupos en orden y al final imprime
+    "TODOS LOS TEST OK" si errores quedó en 0. throws Exception: el "paraguas"
+    que permite no escribir try/catch alrededor de métodos que lanzan la
+    excepción chequeada.
+
+L57-L64  ok(condicion, mensaje): el ayudante de $PORTUNIDAD. Si la condición es
+    true imprime "  [OK] mensaje"; si es false suma 1 a errores e imprime
+    "  [ERROR] mensaje". Todos los tests terminan en llamadas a ok(...): es la
+    forma de "asertar" (comparar contra lo esperado) sin librerías externas.
+
+L66-L83  testABBDegenerado(): el peor caso posible del ABB.
+    - Inserta 1..1000 EN ORDEN: cada clave nueva se cuelga a la derecha ->
+    el árbol se transforma en una LISTA ENLAZADA (altura 999). Si tu kEsimo
+    funcionara solo en árboles balanceados, acá va a fallar.
+    - Compara kEsimo(k) contra el propio k para todos los 1..1000 (el arreglo
+    ordenado "de memoria" es 1,2,3,...). 
+    - Verifica altura == n-1, sucesor(n)=null, predecesor(1)=null y rango
+    completo (1,n) == n.
+
+GRUPOS 2 y 3 (resumen):
+    testAccionesAleatorias(): con semilla 7, inserta los 400 valores barajados
+    de a uno; DESPUÉS de CADA inserción ordena la lista de presentes (con
+    stream().sorted(), una línea de Java 8) y chequea kEsimo(i) contra ese
+    arreglo ordenado + el invariante tamanosConsistentes(). Luego borra 200
+    claves al azar y vuelve a verificar todo cada vez. Es el test que caza
+    bug de el típico "olvidé actualizar un tamano".
+    testRangos(): para x en 15..85 calcula cuantosMenores(x) contando a mano
+    con un for sobre el arreglo ordenado esperado, y para la grilla de a,b
+    compara consultarRango Y consultarRangoIngenuo contra la cuenta manual.
+    También rango(50)=6, rango(20)=1 (mínimo), rango(80)=11 (máximo).
+
+L85-L128  testIdentidadSucesor(): LA prueba de la regla de oro.
+    - Guarda la REFERENCIA al nodo 35 (nodoDe(35)).
+    - eliminar(30) (30 tiene dos hijos; su sucesor inorden es 35, que se
+      MUDE de posición).
+    - Vuelve a pedir nodoDe(35) y comprueba con == ... que ES EL MISMO OBJETO:
+      si en eliminar hubiésemos COPIADO la clave de 35 a otro nodo, el objeto
+      apuntado por la referencia vieja se habría quedado muerto en el árbol y
+      este test fallaría. En Java, == [reservada: comparación de identidad de
+      referencia] pregunta "¿es la misma dirección de memoria?", no "¿son
+      iguales?" (para contenido se usa equals()).
+    - Además: la clave y el valor del nodo siguen correctos, y el nodo 30 con
+      nodoDe(30) ya es null.
+
+GRUPOS 4, 5, 6 y 8 (resumen):
+    testExcepciones(): arma un árbol chico y comprueba que CADA caso imposible
+    lance SU excepción: kEsimo(0) y kEsimo(2 con 1 solo nodo) y kEsimo(1 en
+    árbol vacío) -> IndiceFueraDeRango; agregar(null) -> ClaveNula;
+    consultarRango(20,5) -> RangoInvalido; obtener/eliminar/sucesor/predecesor/
+    rango de una clave inexistente -> ClaveInexistente (chequeada). Cierra
+    verificando que el árbol quedó intacto: "10(1)" con size 1.
+    testDuplicada(): agregar(30,"P30") y después agregar(30,"P30_NUEVO") no
+    debe cambiar el toString() ni el size (solo actualizar el valor).
+    testStrings(): instancia ABBAumentado<String, Integer> con claves banana/
+    cereza/durazno/manzana: prueba que el código genérico también ordena
+    String (kEsimo(1)=banana, rango [a,c]=1, inorden banana durazno manzana).
+    testIndiceDobleSincro(): 300 operaciones MIXTAS insertar/eliminar al azar
+    sobre el índice; después de cada una exige arbol.size()==tabla.size()==
+    lista local. Después: obtener todas las claves POR EL ÍNDICE -> 0 visitas
+    del árbol; obtenerlas POR EL ÁRBOL -> más de 0. Y verifica que cada
+    referencia de la tabla apunta EXACTAMENTE al mismo Nodo del árbol:
+    indice.arbol().nodoDe(c) == indice.obtenerNodo(c). Es la prueba final de
+    que la tabla guarda referencias compartidas, no copias.
+
+L131-L164  testRehashForzado(): monta un IndiceDoble con alfaMax = 0.3
+    (MINÚSCULO) para que el rehash dispare CONSTANTE mientras inserta 500
+    claves de 1..20000. Si insertar o rehash estuvieran mal, algo se perdería
+    en la reubicación de cubetas. Al final TODAS las claves siguen accesibles
+    por la tabla y con su nodo, con m = 2816 y size sincronizado en las dos
+    estructuras.
+================================================================================
+RESUMEN DE CONCEPTOS CLAVE  (para repasar antes de la defensa)
+================================================================================
+
+--------------------------------------------------------------------------------
+1. LAS DOS ESTRUCTURAS Y POR QUÉ USAMOS LAS DOS
+--------------------------------------------------------------------------------
+Este TP implementa DOS estructuras de datos "desde cero" (sin usar ArrayList
+ni Map de Java): un Árbol Binario de Búsqueda AUMENTADO y una Tabla de
+Dispersión (hash table) con encadenamiento.
+
+Cada una tiene un superpoder distinto y SON COMPLEMENTARIAS:
+
+  - El ABB mantiene las claves ORDENADAS. Por eso puede responder
+    "k-ésimo menor", "cuántos menores que X", "rango [a,b]" y el
+    for-each en orden. Cuesta O(h) por operación (h = altura).
+  - La Tabla de Dispersión responde "¿existe la clave X y cuál es su valor?"
+    en O(1) promedio (TIEMPO CONSTANTE: casi no importa cuántas claves haya).
+    Pero NO tiene orden: no puede responder k-ésimo ni rangos.
+
+La idea del Ejercicio 2 (IndiceDoble) es juntar lo mejor de ambos SIN
+duplicar datos: el árbol es dueño de los nodos, y la tabla guarda
+REFERENCIAS a esos mismos nodos. Buscar "¿existe X?" por la tabla no toca el
+árbol; preguntar "¿cuál es el 5.º menor?" delega al árbol que sí ordena.
+Es exactamente lo que hacen las bases de datos reales: un índice acelera la
+búsqueda puntual sin sacrificar el orden.
+
+--------------------------------------------------------------------------------
+2. VOCABULARIO MÍNIMO DE JAVA USADO EN LOS 10 ARCHIVOS
+--------------------------------------------------------------------------------
+  - Clase: el "molde" que define un objeto. Un objeto es una variable que
+    tiene datos (campos) y comportamientos (métodos). Se crea con new.
+  - static: significa "de la clase, no del objeto". main(String[] args) es
+    static porque hay que poder arrancar sin crear ninguna instancia.
+  - public / private: public = visible para todos; private = solo la clase
+    puede tocarlo (encapsulamiento, protege los datos internos). private final
+    es el "const" de Java: la referencia no puede cambiar nunca.
+  - Constructor: método especial con el mismo nombre de la clase que se
+    ejecuta con new; prepara el objeto (ej: inicializar Tam, max, etc.).
+  - this: recién dentro de la clase, la variable que apunta al objeto actual.
+  - null: una referencia que no apunta a NINGÚN objeto. Antes de usar un
+    objeto hay que preguntar "¿es null?" o explota NullPointerException.
+  - == compara DIRECCIONES DE MEMORIA (¿es el mismo objeto?); equals()
+    compara CONTENIDO (¿son iguales?). En este TP, que la tabla apunte al
+    MISMO nodo del árbol se comprueba con ==.
+  - for-each: for (T x : estructura). Funciona si la estructura tiene
+    .iterator() que devuelva un Iterator. En nuestro ABB el iterador hace un
+    recorrido inorden (y algunas versiones lo implementaban con recursión en
+    un método generador).
+  - ArrayList/List y Random: bibliotecas de Java. La única concesión "ya
+    hecha" son las listas del TEST (no de las estructuras).
+  - Genéricos <K, V>: K y V son "tipos por llenar" al crear el objeto
+    (new ABBAumentado<Integer, String>()). Así la misma clase sirve para
+    claves Integer o String.
+  - Excepción: una "alarma" que corta el programa y se puede atrapar con
+    try/catch. Unchecked (RuntimeException y hijas): compila sin avisar.
+    Checked (nuestra ClaveInexistenteException): si un método puede lanzarla,
+    el que la llama DEBE atraparla (o declarar throws ...).
+
+--------------------------------------------------------------------------------
+3. EL CONTADOR DE VISITAS / SONDAS: CÓMO SE MIDEN LAS COMPLEJIDADES
+--------------------------------------------------------------------------------
+- arbol.visitas(): entero largo que SUMA 1 cada vez que se compara una clave
+  contra un nodo. Se puede reiniciar (reiniciarVisitas()). Toda operación del
+  árbol toca este contador, excepto el iterador for-each (para que recorrer
+  para imprimir no contamine las mediciones).
+- tabla.sondas(): entra cada vez que se MIRA una entrada de una cubeta
+  (comparar clave contra la del eslabón). Una búsqueda exitosa en la primera
+  posición de su cubeta = 1 sonda.
+
+Los tests reinventaban con clean la misma idea: el experimento NO mide
+tiempo cronómetro (System.nanoTime() `sería ruidoso en una notebook): mide
+OPERACIONES CONTADAS (comparaciones, sondas). Por eso las columnas arrojan
+números exactos y reproducibles: VIS_ABB, sondas, VIS_RANGO, etc.
+
+--------------------------------------------------------------------------------
+4. NOTACIÓN ASINTÓTICA (O, Omega, Theta) EN DOS MINUTOS
+--------------------------------------------------------------------------------
+T(n) dice "cuánto le costará, en PASOS, una operación cuando hay n claves".
+Dado que los pasos concretos dependen de la máquina, se rescata el ORDEN de
+crecimiento cuando n crece:
+
+  - O(f(n)) (cota superior): el costo NUNCA pasa de multiplicar f(n) por una
+    constante. "Peor caso".
+  - Omega(f(n)) (cota inferior): el costo NUNCA baja de multiplicar f(n) por
+    una constante. "Mejor caso".
+  - Theta(f(n)): el costo está ATRAPADO entre dos constantes por arriba y por
+    abajo. "Caso justo".
+
+Ordenes que aparecen en el TP (de mejor a peor):
+  O(1)   constante (no depende de n),  O(log n) sublineal,
+  O(n)   lineal, O(n log n), O(n^2) cuadrático.
+
+Lo importante: log2(10000) ~ 13, mientras que 10000 es 10000. Por eso un
+árbol de altura 13 y una lista de 10000 elementos no son comparables, y la
+tabla con O(1) promedio es imbatible para buscar un valor puntual.
+
+--------------------------------------------------------------------------------
+5. COMPLEJIDADES FINALES DE CADA ESTRUCTURA (para defender de memoria)
+--------------------------------------------------------------------------------
+ARBOL BINARIO (h = altura; caso balanceado h ~ log2(n); degenerado h = n-1):
+  agregar        O(h) -> caso balanceado Theta(log n), peor Theta(n)
+  eliminar       O(h) [si hay 2 hijos: O(h) encontrar sucesor + O(h) bajar]
+  obtener        O(h)
+  kEsimo(k)      O(h)   (baja una raíz a la hoja siguiendo tamano izquierdo)
+  cuantosMenores O(h)
+  consultarRango O(h)   [dos bajadas hasta a y b; ciertos nodos en medio]
+  rango(sucesor) O(h)
+  for-each       Theta(n) (recorre los n nodos; O(1) por nodo)
+
+TABLA DE DISPERSIÓN (m cubetas; alfa = n/m factor de carga):
+  insertar       O(1) PROMEDIO (mejor O(1); PEOR Theta(n): todos a una cubeta)
+  obtener        O(1) PROMEDIO; peor Theta(n)
+  eliminar       O(1) PROMEDIO; peor Theta(n)
+  rehash (solo cuando n > alfaMax*m): construir tabla nueva + reinsertar n
+  claves = Theta(n) cada vez, pero amortizado (repartido) da O(1) extra
+  por inserción. Por eso "el rehash no arruina" el O(1) promedio: se amortiza.
+
+INDICE DOBLE:
+  agregar   costará O(h) del árbol + O(1) promedio de la tabla.
+  obtener   SOLO la tabla: O(1) promedio. (De esto tratan las 0 visitas.)
+  eliminar  O(h) del árbol + O(1) promedio de la tabla.
+  kEsimo/consultaRango: delegan al árbol: O(h).
+
+Datos concretos que conviene recordar del experimento:
+  - N=10000 aleatorio: h_aleat ~ 21-22; h_ord = 9999.
+  - vis_kEsimo_ord = 5000 = N/2 (recorre la mitad de la lista).
+  - consultarRango aumentado: 46-59 visitas con N=2000..10000 (casi
+    constante, escala con h). consultarRangoIngenuo: siempre N entero.
+  - En 9 nodos el aumentado "pierde" (12 vs 9): es el costo fijo de 2-3
+    bajadas que se amortiza recién cuando n >> h.
+  - Experimentos del índice: N claves -> N sondas (hash casi perfecto sobre
+    claves consecutivas), alfa <= 1 con rehash, m salta en potencias de 2.
+    Tabla fija m=97: alfa = N/97 crece (20.6 -> 103) y sondas/N crece con N:
+    la demostración empírica de Theta(1 + alfa) del encadenamiento.
+
+--------------------------------------------------------------------------------
+6. PREGUNTAS TÍPICAS DE DEFENSA Y SU RESPUESTA EN UNA FRASE
+--------------------------------------------------------------------------------
+  ¿Por qué el ABB aumenta el tamano si ya puede contar con recursión?
+  -> Porque consultarRango(35,65) baja solo 2-3 caminos leyendo tamanos ya
+     calculados (O(h)), mientras que contar fuerza bruta recorre los n nodos
+     (Theta(n)). El tamaño aumentado "prepaga" en cada inserción el conteo
+     que luego se pregunta mil veces.
+
+  ¿Y si agregas 60000 claves ordenadas?
+  -> El árbol degenera a lista (altura n-1) y TODAS las operaciones caen a
+     Theta(n). Por eso el experimento contrasta aleatorio vs ordenado y el
+     test valida kEsimo sobre la lista: nuestro código no se rompe, solo
+     pierde eficiencia (como debe ser en un ABB sin balanceo).
+
+  ¿Por qué kEsimo no recorre? ¿No debería ser igual que el k-esimo de una lista?
+  -> kEsimo baja UNA RAIZ atrás, eligiendo a cada paso "¿a derecha o a
+     izquierda?" con el tamaño izquierdo. En un árbol balanceado eso es O(h)
+     = O(log n); en una lista es O(n) porque h=n.
+
+  ¿Cómo justificas que obtener por el índice no incremente visitas del árbol?
+  -> Porque IndiceDoble.obtener SOLO llama a tabla.obtener(clave), que camina
+     una cubeta y devuelve el nodo; NUNCA invoca arbol.obtener. El test
+     concreta esto mismo (0 visitas en el árbol y <= 2 sondas para "70").
+
+  ¿Qué es el load factor y cuándo rehash?
+  -> alfa = n/m. Si alfa > alfaMax (1 en la tabla común; infinito = nunca),
+     se duplica m y se reinsertan las claves. Si alfaMax es chico, rehash casi
+     todo el tiempo (test 9). Con m=97 fijo alfa crece y las cubetas se
+     alargan (experimento 2): viva solo a mija alfa baja para que las
+     búsquedas sigan en O(1).
+
+  ¿Por qué además se pasa alfaMax = infinito? ¿No deberías elegir alfa <= 1?
+  -> En el árbol, rehasing infinito es una manera de "DESACTIVAR" el rehash y
+     observar qué pasa si la tabla se llena de cubetas (colisiones y el
+     Theta(1+alfa)). En el ejercicio principal el índice usa alfaMax=1 para
+     demostrar el O(1) promedio de las búsquedas.
+
+  ¿Por qué encadenamiento y no sondeo lineal?
+  -> Con encadenamiento, la clave que ya está en la cubeta simplemente se
+     COLA a la lista; no hay "alinura" de claves que responda al rehash o a
+     grupos primarios. El costo esperado por búsqueda es Theta(1+alfa).
+     Además el encadenamiento permite guardar REFERENCIAS a nodos de otra
+     estructura (la del índice doble), cosa que el sondeo no soporta de forma
+     natural: al rehash las claves se reubican de posición pero el nodo
+     apuntado es el mismo objeto porque la tabla guarda la referencia, no una
+     copia.
+
+  ¿Cuál es el papel de los campo tamaño aumentado y de la referencia al nodo?
+  -> El tamano izquierdo permite conocer el rango/contar y buscar el k-ésimo
+     sin recorrer todo el árbol. La referencia de la tabla al nodo permite
+     que el valor se "vea" desde las dos estructuras y que las visitas del
+     árbol no se gasten en cada búsqueda puntual del índice.
+
+  ¿Qué tiene que ver el Garbage Collector y el manejo de referencias?
+  -> Java no libera memoria a mano: cuando ningún objeto vivo apunta a un
+     Nodo, el Garbage Collector lo recicla solo. Por eso es crítico que al
+     ELIMINAR el código desenganche el nodo del árbol (null en el padre) Y
+     también de la tabla (borrar el eslabón de la cubeta): si dejamos la
+     referencia de la tabla apuntando a un nodo ya "eliminado",
+     el nodo NO se recicla y además quien busque por la tabla va a leer un
+     valor fantasma. El objeto en la memoria ES la unión de las referencias.
+
+  ¿Qué pesa más, el objeto Nodo o el arreglo de primitivas?
+  -> Cada Nodo es un objeto: por objeto Java guarda clave + valor + tamano +
+     dos referencias (izquierda/derecha) + el "overhead de objeto" (header:
+     clase/marca de GC, sin contar el objeto String/Punteado que cuelga).
+     Una tabla con 10000 entradas primitivas int cabría en 40 KB; perforada
+     con objetos de envoltura (Integer, String) ocupa MUCHO más RAM aunque
+     las cubetas sean arreglos. En este TP los "costos" medidos son conteos de
+     comparaciones, no bytes, pero en la defensa hay que poder explicar ese
+     trade-off de memoria: rapidez de las estructuras de referencias contra
+     el costo de los objetos (por eso las estructuras de datos "reales" de
+     Java pagan lo mismo con primitivas y envolturas).
+
+  ¿Y por qué mantenés el for-each? (lo preguntan si el @Override pelea)
+  -> El for-each es una VERIFICACIÓN de que el ABB recorre INORDEN (los pares
+     de la escritura en el TestABBAumentado). El necesita todas las
+     operaciones básicas igual: cada iteración no debe tocar el contador de
+     visitas, para que el experimento no se contamine.
+
+Y PARA CERRAR: la "regla de oro" del índice doble que resume todo el TP.
+  - El árbol ES el dueño de los datos (clave y valor viven en sus nodos).
+  - La tabla es la VENTANA rápida: indexa con la llave hash la referencia al
+    nodo.
+  - obtener resuelve por la tabla (O(1) promedio); kEsimo y rangos por el
+    árbol (O(h)). Los dos reportan el mismo n y eliminar toca los dos.
+  - Si dominás esas tres frases y los contadores (visitas vs sondas), la
+    defensa de este TP está ganada.
