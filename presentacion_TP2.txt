@@ -1,0 +1,31 @@
+Trabajo Practico N.º 2 — Algoritmos y Estructuras de Datos III
+
+Introduccion
+
+Este proyecto presenta la implementacion en Java de dos estructuras de datos fundamentales para la gestion eficiente de informacion ordenada y acceso rapido por clave. El primer componente es un Arbol Binario de Busqueda aumentado que, ademas de almacenar claves y valores, guarda en cada nodo la cantidad de elementos de su subarbol. Esta informacion adicional permite responder consultas como el k-esimo menor y el conteo de claves en un rango sin recorrer la totalidad del arbol. El segundo componente es una Tabla de Dispersion con resolucion de colisiones mediante encadenamiento que ofrece acceso directo a los elementos por su clave en tiempo promedio constante. Ambas estructuras se integran en un Indice Doble que combina las ventajas del ordenamiento del arbol con la velocidad de busqueda de la tabla hash.
+
+Desarrollo: Arbol Binario de Busqueda Aumentado
+
+El arbol binario de busqueda aumentado es una extension del arbol binario de busqueda clasico. Cada nodo contiene cuatro campos fundamentales: la clave que identifica el elemento, el valor asociado, y dos referencias a los subarboles izquierdo y derecho. Ademas, incluye un campo entero llamado tamano que indica cuantos nodos posee el subarbol cuya raiz es dicho nodo. Este campo se actualiza automaticamente despues de cada insercion o eliminacion para mantener el invariante de tamano.
+
+La operacion de insercion recorre el arbol comparando la clave nueva con las existentes hasta encontrar la posicion correcta. La operacion de eliminacion maneja tres situaciones distintas: un nodo sin hijos, un nodo con un solo hijo, o un nodo con dos hijos. En el caso mas complejo, el de un nodo con dos hijos, se extrae el sucesor inorden y se reenlaza en la posicion del eliminado, preservando las referencias existentes.
+
+Las consultas de k-esimo menor y conteo en rango aprovechan el campo tamano para descender por un unico camino en tiempo proporcional a la altura del arbol. La altura varia entre logaritmica en el mejor caso y lineal en el peor caso, cuando los datos se insertan en orden creciente. El conteo de visitas registra cuantos nodos se examinan durante cada operacion, lo que permite medir el rendimiento real de la estructura.
+
+Desarrollo: Tabla de Dispersion con Encadenamiento
+
+La tabla de dispersion, o tabla hash, es una estructura que mapea claves a valores utilizando una funcion de compresion. La funcion utilizada en este proyecto calcula un indice a partir del codigo hash de la clave, aplicando una mascara para eliminar el bit de signo y realizando una operacion de modulo. Cada posicion del arreglo de cubetas contiene una lista enlazada que almacena los elementos que colisionan en el mismo indice.
+
+La insercion recorre la lista de la cubeta correspondiente y, si la clave no existe, agrega el nuevo nodo al inicio de la lista. Si el factor de carga supera el umbral maximo, se ejecuta un rehash que duplica el tamano del arreglo y redistribuye todas las claves. La busqueda y eliminacion recorren la lista enlazada de la cubeta calculada, comparando claves hasta encontrar el elemento deseado. El contador de sondas mide cuantos nodos de lista se visitan durante las operaciones de acceso. En el peor caso, donde todas las claves colisionan en una sola cubeta, el costo se vuelve lineal.
+
+Desarrollo: Indice Doble y Composicion
+
+El indice doble combina el arbol aumentado y la tabla de dispersion en una sola interfaz unificada. La tabla no almacena copias de los valores, sino referencias directas a los nodos del arbol. Esta decision de diseno permite que la busqueda por clave se resuelva exclusivamente a traves de la tabla, sin incrementar el contador de visitas del arbol. Las operaciones de ordenamiento, como k-esimo menor y consulta de rango, delegan en el arbol, que conserva su eficiencia.
+
+La eliminacion sincroniza ambas estructuras, borrando el nodo tanto del arbol como de la tabla de manera simultanea. Esta composicion ofrece lo mejor de ambos mundos: acceso directo por clave en tiempo constante promedio, y operaciones de ordenamiento en tiempo logaritmico. El diseno respeta los principios de programacion orientada a objetos con genericidad en las claves y los valores. Las excepciones personalizadas manejan situaciones como claves nulas, claves inexistentes, indices fuera de rango y rangos invalidos. Los tests de validacion verifican la correctitud frente a un oraculo de fuerza bruta en multiples escenarios, incluyendo arboles degenerados, inserciones y borrados aleatorios, y genericidad con claves de tipo String.
+
+Conclusion
+
+Este proyecto demuestra la complementariedad de dos estructuras de datos clasicas. El arbol binario de busqueda aumentado ofrece eficiencia en operaciones de ordenamiento y rango con costo logaritmico en el caso promedio. La tabla de dispersion con encadenamiento ofrece acceso directo por clave con costo constante en promedio. El indice doble integra ambas estructuras de manera coherente, respaldado por un diseno solido basado en composicion y genericidad.
+
+Los experimentos empiricos confirman el analisis asintotico formal, mostrando la brecha significativa entre el rendimiento del arbol aumentado y un enfoque ingenuo de recorrido completo. El campo tamano del arbol es la clave que transforma consultas lineales en consultas logaritmicas sin agregar complejidad estructural. El manejo cuidadoso de referencias en la eliminacion garantiza la integridad del indice doble. Las pruebas automatizadas validan la correccion en centenares de escenarios, incluyendo casos limite y operaciones aleatorias intercaladas. Este trabajo constituye una base solida para el estudio avanzado de estructuras de datos y algoritmos.
